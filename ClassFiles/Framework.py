@@ -47,8 +47,8 @@ class GenericFramework(ABC):
         estimate = np.empty([batch_size]+ self.image_size + [1], dtype='float32')
         for k in range(batch_size):
             gt, rec = self.data_pip.load_data(training_data=training_data)
-            true[k,...,1]=gt
-            estimate[k,...,1]=estimate
+            true[k,...,0]=gt
+            estimate[k,...,0]=estimate
         return true, estimate
 
     def save(self, global_step):
