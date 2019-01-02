@@ -30,8 +30,8 @@ def get_paths(path, truth_ex, recon_ex):
 # Abstract class for data preprocessing. To customize to your own dataset, define subclass with the
 # image_size, name and color of your dataset and the corresponding load_data method
 class data_pip(ABC):
-    image_size = [64, 64, 64]
-    name = 'PDB'
+    image_size = [48, 48, 48]
+    name = 'PDB_48'
 
     # load data outputs single image in format (image_size, colors).
     # The image should be normalized between (0,1).
@@ -71,4 +71,37 @@ class PDB(data_pip):
         else:
             n = self.eval_amount
         return self.get_image(random.randint(0, n-1), training=training_data)
+
+class PDB_96(data_pip):
+    image_size = [96, 96, 96]
+    name = 'PDB_96'
+
+    def __init__(self, training_path, evaluation_path):
+        super(PDB_96, self).__init__()
+        # set up the training data file system
+        self.train_list = get_paths(training_path, '_original.mrc', '_origFil.mrc')
+        self.train_amount = len(self.train_list)
+        print('Training Pictures found: ' + str(self.train_amount))
+        self.eval_list = get_paths(evaluation_path, '_original.mrc', '_origFil.mrc')
+        self.eval_amount = len(self.eval_list)
+        print('Evaluation Pictures found: ' + str(self.eval_amount))
+
+    def get_image(self, number, training):
+        if training:
+            L = self.train_list
+        else:
+            L = self.eval_list
+        with mrcfile.open(L[number][0]) as mrc:
+            gt = mrc.data
+        with mrcfile.open(L[number][1]) as mrc:
+            rec = mrc.data
+        return gt, rec
+
+    # methode to cut a image_size area out of the training images
+    def load_data(self, training_data=True):
+        if training_data:
+            n = self.train_amount
+        else:
+            n = self.eval_amount
+        return self.get_image(random.randint(0, n - 1), training=training_data)
 
