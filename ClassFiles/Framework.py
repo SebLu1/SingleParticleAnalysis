@@ -152,16 +152,17 @@ class AdversarialRegulariser(GenericFramework):
             lr = tf.summary.scalar('Lipschitz_Regulariser', self.regulariser_was)
             ol = tf.summary.scalar('Overall_Net_Loss', self.loss_was)
             self.merged_network = tf.summary.merge([dd, lr, ol])
+        sliceN = int(tf.shape(self.ground_truth)[3]/2)
         with tf.name_scope('Picture_Optimization'):
             wasser_loss = tf.summary.scalar('Wasserstein_Loss', self.was_output)
-            recon = tf.summary.image('Reconstruction', self.cut_reco, max_outputs=1)
-            ground_truth = tf.summary.image('Ground_truth', self.ground_truth, max_outputs=1)
+            recon = tf.summary.image('Reconstruction', self.cut_reco[..., sliceN, :], max_outputs=1)
+            ground_truth = tf.summary.image('Ground_truth', self.ground_truth[..., sliceN, :], max_outputs=1)
             quality_assesment = tf.summary.scalar('L2_to_ground_truth', self.quality)
             self.merged_pic = tf.summary.merge([wasser_loss, quality_assesment, recon, ground_truth])
         with tf.name_scope('Reconstruction_Quality'):
             wasser_loss = tf.summary.scalar('Wasserstein_Loss', self.was_output)
-            recon = tf.summary.image('Reconstruction', self.cut_reco, max_outputs=1)
-            ground_truth = tf.summary.image('Ground_truth', self.ground_truth, max_outputs=1)
+            recon = tf.summary.image('Reconstruction', self.cut_reco[..., sliceN, :], max_outputs=1)
+            ground_truth = tf.summary.image('Ground_truth', self.ground_truth[..., sliceN, :], max_outputs=1)
             quality_assesment = tf.summary.scalar('L2_to_ground_truth', self.quality)
             self.training_eval = tf.summary.merge([wasser_loss, quality_assesment, recon, ground_truth])
 
