@@ -48,7 +48,7 @@ class GenericFramework(ABC):
         for k in range(batch_size):
             gt, rec = self.data_pip.load_data(training_data=training_data)
             true[k,...,0]=gt
-            estimate[k,...,0]=estimate
+            estimate[k,...,0]=rec
         return true, estimate
 
     def save(self, global_step):
