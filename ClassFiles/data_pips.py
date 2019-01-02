@@ -46,11 +46,9 @@ class PDB(data_pip):
     def __init__(self, training_path, evaluation_path):
         super(PDB, self).__init__()
         # set up the training data file system
-        print(training_path)
         self.train_list = get_paths(training_path, '_scaled.mrc', '_filtered.mrc')
         self.train_amount = len(self.train_list)
         print('Training Pictures found: ' + str(self.train_amount))
-        print(evaluation_path)
         self.eval_list = get_paths(evaluation_path, '_scaled.mrc', '_filtered.mrc')
         self.eval_amount = len(self.eval_list)
         print('Evaluation Pictures found: ' + str(self.eval_amount))
@@ -72,5 +70,5 @@ class PDB(data_pip):
             n = self.train_amount
         else:
             n = self.eval_amount
-        return self.get_image(random.randint(n), training=training_data)
+        return self.get_image(random.randint(0, n-1), training=training_data)
 
