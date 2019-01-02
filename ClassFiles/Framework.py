@@ -152,7 +152,7 @@ class AdversarialRegulariser(GenericFramework):
             lr = tf.summary.scalar('Lipschitz_Regulariser', self.regulariser_was)
             ol = tf.summary.scalar('Overall_Net_Loss', self.loss_was)
             self.merged_network = tf.summary.merge([dd, lr, ol])
-        sliceN = int(tf.shape(self.ground_truth)[3]/2)
+        sliceN = tf.cast((tf.shape(self.ground_truth)[3]/2), dtype=tf.int32)
         with tf.name_scope('Picture_Optimization'):
             wasser_loss = tf.summary.scalar('Wasserstein_Loss', self.was_output)
             recon = tf.summary.image('Reconstruction', self.cut_reco[..., sliceN, :], max_outputs=1)
