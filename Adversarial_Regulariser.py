@@ -11,7 +11,7 @@ else:
     pre_data = ''
 
 TRAINING_PATH = pre_data+'Training/'
-EVALUATION_PATH = 'Evaluation/'
+EVALUATION_PATH = pre_data+'Evaluation/'
 SAVES_PATH = prefix+'Saves/'
 
 

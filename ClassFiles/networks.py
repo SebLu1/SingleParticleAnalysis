@@ -44,7 +44,7 @@ class ConvNetClassifier(network):
                                  activation=lrelu, reuse=tf.AUTO_REUSE, name='conv7', strides=2)
 
         # reshape for classification
-        reshaped = tf.layers.Flatten(conv7)
+        reshaped = tf.layers.flatten(conv7)
 
         # dense layer for classification
         dense = tf.layers.dense(inputs=reshaped, units=256, activation=lrelu, reuse=tf.AUTO_REUSE, name='dense1')
