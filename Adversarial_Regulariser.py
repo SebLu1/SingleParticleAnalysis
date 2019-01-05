@@ -2,6 +2,7 @@ from ClassFiles.Framework import AdversarialRegulariser
 from ClassFiles.networks import ConvNetClassifier
 from ClassFiles.data_pips import PDB
 import platform
+import sys
 
 if platform.node() == 'motel':
     prefix = '/local/scratch/public/sl767/SPA/'
@@ -36,6 +37,14 @@ class Experiment1(AdversarialRegulariser):
 
 
 experiment = Experiment1(TRAINING_PATH, EVALUATION_PATH, SAVES_PATH)
-for k in range(7):
-    experiment.train(200)
-experiment.log_optimization(30, 1)
+
+n = sys.argv[1]
+
+if n == 0:
+    for k in range(7):
+        experiment.train(200)
+if n == 1:
+    experiment.log_optimization(30, 1)
+if n == 2:
+    experiment.log_optimization(10, 0.5)
+    experiment.log_optimization(10, 1.5)
