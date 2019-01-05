@@ -212,7 +212,7 @@ class AdversarialRegulariser(GenericFramework):
             mrc.set_data(true)
         for k in range(steps + 1):
             with mrcfile.new(path+'/Iteration_k.mrc') as mrc:
-                mrc.set_data(guess)
+                mrc.set_data(guess[0, ..., 0])
             guess = self.update_pic(1, step_s, guess)
 
 
