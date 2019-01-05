@@ -129,9 +129,11 @@ class AdversarialRegulariser(GenericFramework):
 
         # placeholders
         self.reconstruction = tf.placeholder(shape=[None] + self.image_size + [1], dtype=tf.float32)
+        self.ground_truth = tf.placeholder(shape=[None] + self.image_size + [1], dtype=tf.float32)
 
         # the loss functional
         self.was_output = tf.reduce_mean(self.network.net(self.reconstruction))
+        self.was_cor = self.was_output - tf.reduce_mean(self.network.net(self.ground_truth))
 
         # get the batch size - all gradients have to be scaled by the batch size as they are taken over previously
         # averaged quantities already. Makes gradients scaling batch size inveriant
@@ -142,7 +144,6 @@ class AdversarialRegulariser(GenericFramework):
 
         # Measure quality of reconstruction
         self.cut_reco = tf.clip_by_value(self.reconstruction, 0.0, 1.0)
-        self.ground_truth = tf.placeholder(shape=[None] + self.image_size + [1], dtype=tf.float32)
         self.quality = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square(self.ground_truth - self.reconstruction),
                                                             axis=(1, 2, 3))))
 
@@ -154,17 +155,11 @@ class AdversarialRegulariser(GenericFramework):
             self.merged_network = tf.summary.merge([dd, lr, ol])
         sliceN = tf.cast((tf.shape(self.ground_truth)[3]/2), dtype=tf.int32)
         with tf.name_scope('Picture_Optimization'):
-            wasser_loss = tf.summary.scalar('Wasserstein_Loss', self.was_output)
+            wasser_loss = tf.summary.scalar('Wasserstein_Loss', self.was_cor)
             recon = tf.summary.image('Reconstruction', self.cut_reco[..., sliceN, :], max_outputs=1)
             ground_truth = tf.summary.image('Ground_truth', self.ground_truth[..., sliceN, :], max_outputs=1)
             quality_assesment = tf.summary.scalar('L2_to_ground_truth', self.quality)
             self.merged_pic = tf.summary.merge([wasser_loss, quality_assesment, recon, ground_truth])
-        with tf.name_scope('Reconstruction_Quality'):
-            wasser_loss = tf.summary.scalar('Wasserstein_Loss', self.was_output)
-            recon = tf.summary.image('Reconstruction', self.cut_reco[..., sliceN, :], max_outputs=1)
-            ground_truth = tf.summary.image('Ground_truth', self.ground_truth[..., sliceN, :], max_outputs=1)
-            quality_assesment = tf.summary.scalar('L2_to_ground_truth', self.quality)
-            self.training_eval = tf.summary.merge([wasser_loss, quality_assesment, recon, ground_truth])
 
         # set up the logger
         self.writer = tf.summary.FileWriter(self.path + 'Logs/Network_Optimization/')
