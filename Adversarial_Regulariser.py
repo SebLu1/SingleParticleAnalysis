@@ -40,11 +40,11 @@ experiment = Experiment1(TRAINING_PATH, EVALUATION_PATH, SAVES_PATH)
 
 n = sys.argv[1]
 
-if n == 0:
+if n == '0':
     for k in range(7):
         experiment.train(200)
-if n == 1:
+if n == '1':
     experiment.log_optimization(30, 1)
-if n == 2:
+if n == '2':
     experiment.log_optimization(10, 0.5)
     experiment.log_optimization(10, 1.5)
