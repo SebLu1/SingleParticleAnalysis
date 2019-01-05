@@ -2,6 +2,7 @@ import numpy as np
 import os
 from abc import ABC, abstractmethod
 import tensorflow as tf
+import mrcfile
 
 
 class GenericFramework(ABC):
@@ -153,6 +154,7 @@ class AdversarialRegulariser(GenericFramework):
             lr = tf.summary.scalar('Lipschitz_Regulariser', self.regulariser_was)
             ol = tf.summary.scalar('Overall_Net_Loss', self.loss_was)
             self.merged_network = tf.summary.merge([dd, lr, ol])
+
         sliceN = tf.cast((tf.shape(self.ground_truth)[3]/2), dtype=tf.int32)
         with tf.name_scope('Picture_Optimization'):
             wasser_loss = tf.summary.scalar('Wasserstein_Loss', self.was_cor)
@@ -200,6 +202,19 @@ class AdversarialRegulariser(GenericFramework):
             guess = self.update_pic(1, step_s, guess)
         writer.flush()
         writer.close()
+
+    def visualize_optimization(self, steps, step_s):
+        true, estimate = self.generate_training_data(1, training_data=False)
+        guess = np.copy(estimate)
+        path = self.path + '/Images/step_s_{}_steps_{}'.format(step_s, steps)
+        self.create_single_folder(path)
+        with mrcfile.new(path + '/groundTruth.mrc') as mrc:
+            mrc.set_data(true)
+        for k in range(steps + 1):
+            with mrcfile.new(path+'/Iteration_k.mrc') as mrc:
+                mrc.set_data(guess)
+            guess = self.update_pic(1, step_s, guess)
+
 
     def train(self, steps):
         # the training routine

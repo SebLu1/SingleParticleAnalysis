@@ -48,3 +48,5 @@ if n == '1':
 if n == '2':
     experiment.log_optimization(10, 0.5)
     experiment.log_optimization(10, 1.5)
+if n == '3':
+    experiment.visualize_optimization(10, 1.5)
