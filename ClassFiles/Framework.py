@@ -206,12 +206,12 @@ class AdversarialRegulariser(GenericFramework):
     def visualize_optimization(self, steps, step_s):
         true, estimate = self.generate_training_data(1, training_data=False)
         guess = np.copy(estimate)
-        path = self.path + '/Images/step_s_{}_steps_{}'.format(step_s, steps)
+        path = self.path + 'Images/step_s_{}_steps_{}'.format(step_s, steps)
         self.create_single_folder(path)
-        with mrcfile.new(path + '/groundTruth.mrc') as mrc:
+        with mrcfile.new(path + '/groundTruth.mrc', overwrite=True) as mrc:
             mrc.set_data(true[0, ..., 0], overwrite=True)
         for k in range(steps + 1):
-            with mrcfile.new(path+'/Iteration_k.mrc') as mrc:
+            with mrcfile.new(path+'/Iteration_k.mrc', overwrite=True) as mrc:
                 mrc.set_data(guess[0, ..., 0], overwrite=True)
             guess = self.update_pic(1, step_s, guess)
 
