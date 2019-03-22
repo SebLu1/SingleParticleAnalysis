@@ -27,12 +27,12 @@ class AdversarialRegulariser(object):
         ### Training the regulariser ###
 
         # placeholders
-        self.fourier_data = tf.placeholder(shape=FOURIER_SIZE, dtype=tf.float32)
+        self.fourier_data = tf.placeholder(shape=FOURIER_SIZE, dtype=tf.complex64)
         self.true = tf.placeholder(shape=IMAGE_SIZE, dtype=tf.float32)
         self.learning_rate = tf.placeholder(dtype=tf.float32)
 
         # process the Fourier data
-        real_data = tf.spectral.irfft3d(self.fourier_data)
+        real_data = tf.expand_dims(tf.spectral.irfft3d(self.fourier_data[...,0]), axis=-1)
         self.gen = fftshift_tf(real_data)
 
         # the network outputs
@@ -64,10 +64,11 @@ class AdversarialRegulariser(object):
 
         ### The reconstruction network ###
         # placeholders
-        self.reconstruction_fourier = tf.placeholder(shape=IMAGE_SIZE, dtype=tf.float32)
+        self.reconstruction_fourier = tf.placeholder(shape=FOURIER_SIZE, dtype=tf.complex64)
         self.ground_truth = tf.placeholder(shape=IMAGE_SIZE, dtype=tf.float32)
-
-        self.reconstruction = fftshift_tf(tf.spectral.irfft3d(self.reconstruction_fourier))
+        
+        real_recon=tf.expand_dims(tf.spectral.irfft3d(self.reconstruction_fourier[...,0]), axis=-1)
+        self.reconstruction = fftshift_tf(real_recon)
 
         # the loss functional
         self.was_output = tf.reduce_mean(self.network.net(self.reconstruction))

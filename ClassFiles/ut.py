@@ -36,5 +36,5 @@ class fftshift_odl(odl.Operator):
     def adjoint(self):
         return ifftshift_odl()
 
-fftshift_tf = odl.contrib.tensorflow.as_tensorflow_layer(fftshift_odl)
+fftshift_tf = odl.contrib.tensorflow.as_tensorflow_layer(fftshift_odl())
 
