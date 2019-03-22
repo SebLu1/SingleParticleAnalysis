@@ -1,103 +1,39 @@
 import numpy as np
 import os
-from abc import ABC, abstractmethod
 import tensorflow as tf
-import mrcfile
+from ClassFiles.networks import ConvNetClassifier
+import ClassFiles.ut as ut
+from ClassFiles.ut import fftshift_tf
+
+IMAGE_SIZE = (None, 96, 96, 96, 1)
+FOURIER_SIZE = (None, 96, 96, 49, 1)
+# Weight on gradient regularization
+LMB = 20
 
 
-class GenericFramework(ABC):
-    model_name = 'no_model'
-    experiment_name = 'default_experiment'
-
-    @abstractmethod
-    def get_network(self):
-        # returns an object of the network class. Used to set the network used
-        pass
-
-    @abstractmethod
-    def get_Data_pip(self, training_path, evaluation_path):
-        # returns an object of the data_pip class.
-        pass
-
-    @staticmethod
-    def create_single_folder(folder):
-        # creates folder and catches error if it exists already
-        if not os.path.exists(folder):
-            try:
-                os.makedirs(folder)
-            except OSError:
-                pass
-
-    def __init__(self, training_path, evaluation_path, saves_path):
-        self.data_pip = self.get_Data_pip(training_path, evaluation_path)
-        self.image_size = self.data_pip.image_size
-        self.network = self.get_network()
-
-        # finding the correct path for saving models
-        self.path = saves_path+'Saves/{}/{}/{}/'.format(self.data_pip.name, self.model_name, self.experiment_name)
-        # start tensorflow sesssion
-        self.sess = tf.InteractiveSession()
-
-        # generate needed folder structure
-        self.create_single_folder(self.path+'Data')
-        self.create_single_folder(self.path + 'Logs')
-
-    def generate_training_data(self, batch_size, training_data=True):
-        # method to generate training data given the current model type
-        true = np.empty([batch_size] + self.image_size + [1], dtype='float32')
-        estimate = np.empty([batch_size]+ self.image_size + [1], dtype='float32')
-        for k in range(batch_size):
-            gt, rec = self.data_pip.load_data(training_data=training_data)
-            true[k,...,0]=gt
-            estimate[k,...,0]=rec
-        return true, estimate
-
-    def save(self, global_step):
-        saver = tf.train.Saver()
-        saver.save(self.sess, self.path+'Data/model', global_step=global_step)
-        print('Progress saved')
-
-    def load(self):
-        saver = tf.train.Saver()
-        if os.listdir(self.path+'Data/'):
-            saver.restore(self.sess, tf.train.latest_checkpoint(self.path+'Data/'))
-            print('Save restored')
-        else:
-            print('No save found')
-
-    def end(self):
-        tf.reset_default_graph()
-        self.sess.close()
-
-    @abstractmethod
-    def evaluate(self, image):
-        # apply the model to data
-        pass
-
-
-class AdversarialRegulariser(GenericFramework):
-    model_name = 'Adversarial_Regulariser'
-    # the absolut noise level
-    batch_size = 16
-    # weight on gradient norm regulariser for wasserstein network
-    lmb = 20
-    # learning rate for Adams
-    learning_rate = 0.0001
-    # default step size for picture optimization
-    step_size = 1
-    # the amount of steps of gradient descent taken on loss functional
-    total_steps = 20
+class AdversarialRegulariser(object):
 
     # sets up the network architecture
-    def __init__(self, training_path, evaluation_path, saves_path):
-        # call superclass init
-        super(AdversarialRegulariser, self).__init__(training_path, evaluation_path, saves_path)
+    def __init__(self, path):
+
+        self.path =path
+        self.network = ConvNetClassifier()
+        self.sess = tf.InteractiveSession()
+
+
+        ut.create_single_folder(self.path+'/Data')
+        ut.create_single_folder(self.path + '/Logs')
 
         ### Training the regulariser ###
 
-        # placeholders for NN
-        self.gen = tf.placeholder(shape=[None] + self.image_size + [1], dtype=tf.float32)
-        self.true = tf.placeholder(shape=[None]+self.image_size + [1], dtype=tf.float32)
+        # placeholders
+        self.fourier_data = tf.placeholder(shape=FOURIER_SIZE, dtype=tf.float32)
+        self.true = tf.placeholder(shape=IMAGE_SIZE, dtype=tf.float32)
+        self.learning_rate = tf.placeholder(dtype=tf.float32)
+
+        # process the Fourier data
+        real_data = tf.spectral.irfft3d(self.fourier_data)
+        self.gen = fftshift_tf(real_data)
 
         # the network outputs
         self.gen_was = self.network.net(self.gen)
@@ -119,7 +55,7 @@ class AdversarialRegulariser(GenericFramework):
         self.regulariser_was = tf.reduce_mean(tf.square(tf.nn.relu(self.norm_gradient - 1)))
 
         # Overall Net Training loss
-        self.loss_was = self.wasserstein_loss + self.lmb * self.regulariser_was
+        self.loss_was = self.wasserstein_loss + LMB * self.regulariser_was
 
         # optimizer for Wasserstein network
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -127,10 +63,11 @@ class AdversarialRegulariser(GenericFramework):
                                                                                 global_step=self.global_step)
 
         ### The reconstruction network ###
-
         # placeholders
-        self.reconstruction = tf.placeholder(shape=[None] + self.image_size + [1], dtype=tf.float32)
-        self.ground_truth = tf.placeholder(shape=[None] + self.image_size + [1], dtype=tf.float32)
+        self.reconstruction_fourier = tf.placeholder(shape=IMAGE_SIZE, dtype=tf.float32)
+        self.ground_truth = tf.placeholder(shape=IMAGE_SIZE, dtype=tf.float32)
+
+        self.reconstruction = fftshift_tf(tf.spectral.irfft3d(self.reconstruction_fourier))
 
         # the loss functional
         self.was_output = tf.reduce_mean(self.network.net(self.reconstruction))
@@ -164,7 +101,7 @@ class AdversarialRegulariser(GenericFramework):
             self.merged_pic = tf.summary.merge([wasser_loss, quality_assesment, recon, ground_truth])
 
         # set up the logger
-        self.writer = tf.summary.FileWriter(self.path + 'Logs/Network_Optimization/')
+        self.writer = tf.summary.FileWriter(self.path + '/Logs/Network_Optimization/')
 
         # initialize Variables
         tf.global_variables_initializer().run()
@@ -172,60 +109,53 @@ class AdversarialRegulariser(GenericFramework):
         # load existing saves
         self.load()
 
-    def update_pic(self, steps, stepsize, guess):
-        # updates the guess to come closer to the solution of the variational problem.
-        for k in range(steps):
-            gradient = self.sess.run(self.pic_grad, feed_dict={self.reconstruction: guess})
-            guess = guess - stepsize * gradient[0]
-        return guess
+    def evaluate(self, fourierData):
+        return self.sess.run(self.pic_grad, feed_dict={self.reconstruction_fourier: fourierData})
 
-    def log_network_training(self):
-        true, estimate = self.generate_training_data(batch_size=self.batch_size, training_data=False)
-        logs, step = self.sess.run([self.merged_network, self.global_step],
-                                   feed_dict={self.gen: estimate, self.true: true})
-        self.writer.add_summary(logs, step)
+    # trains the network with the groundTruths and adversarial exemples given. If Flag fourier_data is false,
+    # the adversarial exemples are expected to be in real space
+    def train(self, groundTruth, adversarial, learning_rate, fourier_data =True):
+        if fourier_data:
+            self.sess.run(self.optimizer, feed_dict={self.true: groundTruth, self.fourier_data: adversarial,
+                                                     self.learning_rate: learning_rate})
+        else:
+            self.sess.run(self.optimizer, feed_dict={self.true: groundTruth, self.gen: adversarial,
+                                                     self.learning_rate: learning_rate})
 
-    def log_optimization(self, steps=None, step_s=None):
-        if steps is None:
-            steps = self.total_steps
-        if step_s is None:
-            step_s = self.step_size
+    # Input as in 'train', but writes results to tensorboard instead
+    def test(self, groundTruth, adversarial, fourier_data =True):
+        if fourier_data:
+            merged = self.sess.run(self.merged_network, feed_dict={self.true: groundTruth,
+                                                                   self.fourier_data: adversarial})
+        else:
+            merged = self.sess.run(self.merged_network, feed_dict={self.true: groundTruth, self.gen: adversarial})
+        self.writer.add_summary(merged, global_step=self.global_step)
 
-        true, estimate = self.generate_training_data(32, training_data=False)
-        guess = np.copy(estimate)
-        writer = tf.summary.FileWriter(self.path + '/Logs/Picture_Opt/step_s_{}'.format(step_s))
-        for k in range(steps+1):
-            summary = self.sess.run(self.merged_pic,
-                                    feed_dict={self.reconstruction: guess,
-                                               self.ground_truth: true})
-            writer.add_summary(summary, k)
-            guess = self.update_pic(1, step_s, guess)
+    # Logging method for minimization. Computes the gradients as 'evaluate', but also writes everything to tensorboard
+    # sample id specifies the folder to write to.
+    def log_optimization(self, groundTruth, fourierData, id, step):
+        writer = tf.summary.FileWriter(self.path + '/Logs/Picture_Opt/' + id)
+        summary, grad = self.sess.run([self.merged_pic, self.pic_grad],
+                                feed_dict={self.reconstruction_fourier: fourierData,
+                                           self.ground_truth: groundTruth})
+        writer.add_summary(summary, step)
         writer.flush()
-        writer.close()
-
-    def visualize_optimization(self, steps, step_s):
-        true, estimate = self.generate_training_data(1, training_data=False)
-        guess = np.copy(estimate)
-        path = self.path + 'Images/step_s_{}_steps_{}'.format(step_s, steps)
-        self.create_single_folder(path)
-        with mrcfile.new(path + '/groundTruth.mrc', overwrite=True) as mrc:
-            mrc.set_data(true[0, ..., 0])
-        for k in range(steps + 1):
-            with mrcfile.new(path+'/Iteration_'+str(k)+'.mrc', overwrite=True) as mrc:
-                mrc.set_data(guess[0, ..., 0])
-            guess = self.update_pic(1, step_s, guess)
+        return grad
 
 
-    def train(self, steps):
-        # the training routine
-        for k in range(steps):
-            if k % 100 == 0:
-                self.log_network_training()
-            true, estimate = self.generate_training_data(self.batch_size)
-            self.sess.run(self.optimizer,
-                          feed_dict={self.gen: estimate, self.true: true})
-        self.save(self.global_step)
+    def save(self):
+        saver = tf.train.Saver()
+        saver.save(self.sess, self.path+'/Data/model', global_step=self.global_step)
+        print('Progress saved')
 
-    def evaluate(self, image):
-        # given an image, returns the gradient of the regularization functional
-        return self.sess.run(self.pic_grad, feed_dict={self.reconstruction: image})[0]
+    def load(self):
+        saver = tf.train.Saver()
+        if os.listdir(self.path+'/Data/'):
+            saver.restore(self.sess, tf.train.latest_checkpoint(self.path+'/Data/'))
+            print('Save restored')
+        else:
+            print('No save found')
+
+    def end(self):
+        tf.reset_default_graph()
+        self.sess.close()
