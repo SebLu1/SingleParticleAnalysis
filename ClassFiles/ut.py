@@ -14,6 +14,7 @@ def create_single_folder(folder):
 
 
 IMAGE_SIZE = [96,96,96]
+FOURIER_SIZE = [96,96,49]
 space = odl.uniform_discr([0, 0, 0], IMAGE_SIZE, IMAGE_SIZE, dtype='float32')
 
 
@@ -37,4 +38,29 @@ class fftshift_odl(odl.Operator):
         return ifftshift_odl()
 
 fftshift_tf = odl.contrib.tensorflow.as_tensorflow_layer(fftshift_odl())
+
+# Performs the inverse real fourier transform on Sjors data
+def irfft(fourierData):
+    return np.fft.fftshift(np.fft.irfftn(fourierData))
+
+def adjoing_irfft(realData):
+    x=FOURIER_SIZE[0]
+    y=FOURIER_SIZE[1]
+    z=FOURIER_SIZE[2]
+    mask = np.concatenate((np.ones(shape=(x,y,1)), 2*np.ones(shape=(x,y,z-2)),np.ones(shape=(x,y,1))), axis=-1)
+    fourierData = np.fft.rfftn(np.fft.ifftshift(realData))
+    return np.matmul(fourierData, mask)/(x*y*IMAGE_SIZE[2])
+
+# Ensures consistent Batch,x ,y ,z , channel format
+def unify_form(vector):
+    n = len(vector.shape)
+    if n == 3:
+        return np.expand_dims(np.expand_dims(vector, axis =0), axis=-1)
+    elif n ==4:
+        return np.expand_dims(vector, axis=-1)
+    elif n==5:
+        return vector
+    else:
+        raise ValueError('Inputs to the regularizer must have between 3 and 5 dimensions')
+
 
