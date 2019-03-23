@@ -49,7 +49,7 @@ def adjoing_irfft(realData):
     z=FOURIER_SIZE[2]
     mask = np.concatenate((np.ones(shape=(x,y,1)), 2*np.ones(shape=(x,y,z-2)),np.ones(shape=(x,y,1))), axis=-1)
     fourierData = np.fft.rfftn(np.fft.ifftshift(realData))
-    return np.matmul(fourierData, mask)/(x*y*IMAGE_SIZE[2])
+    return np.multiply(fourierData, mask)/(x*y*IMAGE_SIZE[2])
 
 # Ensures consistent Batch,x ,y ,z , channel format
 def unify_form(vector):

@@ -77,7 +77,7 @@ class AdversarialRegulariser(object):
         batch_s = tf.cast(tf.shape(self.reconstruction)[0], tf.float32)
 
         # Optimization for the picture
-        self.pic_grad = tf.gradients(self.was_output * batch_s, self.reconstruction_fourier)[0]
+        self.pic_grad = tf.gradients(self.was_output * batch_s, self.reconstruction)[0]
 
         # Measure quality of reconstruction
         self.cut_reco = tf.clip_by_value(self.reconstruction, 0.0, 1.0)
@@ -109,10 +109,10 @@ class AdversarialRegulariser(object):
         self.load()
 
     def evaluate(self, fourierData):
-        fourierData = ut.unify_form(fourierData)
         real_data = ut.irfft(fourierData)
+        real_data = ut.unify_form(real_data)
         grad = self.sess.run(self.pic_grad, feed_dict={self.reconstruction: real_data})
-        return ut.adjoing_irfft(grad)[0,...,0]
+        return ut.adjoing_irfft(grad[0,...,0])
 
     # trains the network with the groundTruths and adversarial exemples given. If Flag fourier_data is false,
     # the adversarial exemples are expected to be in real space
@@ -140,16 +140,16 @@ class AdversarialRegulariser(object):
     # Logging method for minimization. Computes the gradients as 'evaluate', but also writes everything to tensorboard
     # sample id specifies the folder to write to.
     def log_optimization(self, groundTruth, fourierData, id, step):
-        fourierData = ut.unify_form(fourierData)
         groundTruth = ut.unify_form(groundTruth)
         real_data = ut.irfft(fourierData)
+        real_data = ut.unify_form(real_data)
         writer = tf.summary.FileWriter(self.path + '/Logs/Picture_Opt/' + id)
         summary, grad = self.sess.run([self.merged_pic, self.pic_grad],
                                 feed_dict={self.reconstruction: real_data,
                                            self.ground_truth: groundTruth})
         writer.add_summary(summary, step)
         writer.flush()
-        return ut.adjoing_irfft(grad)[0,...,0]
+        return ut.adjoing_irfft(grad[0,...,0])
 
 
     def save(self):
