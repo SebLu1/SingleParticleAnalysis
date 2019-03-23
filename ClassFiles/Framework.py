@@ -19,6 +19,7 @@ class AdversarialRegulariser(object):
         self.path =path
         self.network = ConvNetClassifier()
         self.sess = tf.InteractiveSession()
+        self.run_options = tf.RunOptions(report_tensor_allocations_upon_oom = True)
 
 
         ut.create_single_folder(self.path+'/Data')
@@ -79,7 +80,7 @@ class AdversarialRegulariser(object):
         batch_s = tf.cast(tf.shape(self.reconstruction)[0], tf.float32)
 
         # Optimization for the picture
-        self.pic_grad = tf.gradients(self.was_output * batch_s, self.reconstruction)
+        self.pic_grad = tf.gradients(self.was_output * batch_s, self.reconstruction_fourier)[0]
 
         # Measure quality of reconstruction
         self.cut_reco = tf.clip_by_value(self.reconstruction, 0.0, 1.0)
@@ -111,7 +112,7 @@ class AdversarialRegulariser(object):
         self.load()
 
     def evaluate(self, fourierData):
-        return self.sess.run(self.pic_grad, feed_dict={self.reconstruction_fourier: fourierData})
+        return self.sess.run(self.pic_grad, feed_dict={self.reconstruction_fourier: fourierData}, options=self.run_options)
 
     # trains the network with the groundTruths and adversarial exemples given. If Flag fourier_data is false,
     # the adversarial exemples are expected to be in real space
