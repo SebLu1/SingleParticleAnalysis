@@ -2,7 +2,15 @@ import os
 import odl
 from odl.contrib import tensorflow
 import numpy as np
+import fnmatch
 
+def find(pattern, path):
+    result = []
+    for root, dirs, files in os.walk(path):
+        for name in files:
+            if fnmatch.fnmatch(name, pattern):
+                result.append(os.path.join(root, name).replace("\\", "/"))
+    return result
 
 def create_single_folder(folder):
     # creates folder and catches error if it exists already
