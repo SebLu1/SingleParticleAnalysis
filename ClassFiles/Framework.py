@@ -131,11 +131,12 @@ class AdversarialRegulariser(object):
         groundTruth = ut.unify_form(groundTruth)
         adversarial = ut.unify_form(adversarial)
         if fourier_data:
-            merged = self.sess.run(self.merged_network, feed_dict={self.true: groundTruth,
-                                                                   self.fourier_data: adversarial})
+            merged, step = self.sess.run([self.merged_network, self.global_step],
+                                         feed_dict={self.true: groundTruth, self.fourier_data: adversarial})
         else:
-            merged = self.sess.run(self.merged_network, feed_dict={self.true: groundTruth, self.gen: adversarial})
-        self.writer.add_summary(merged, global_step=self.global_step)
+            merged, step = self.sess.run([self.merged_network, self.global_step], 
+                                         feed_dict={self.true: groundTruth, self.gen: adversarial})
+        self.writer.add_summary(merged, global_step=step)
 
     # Logging method for minimization. Computes the gradients as 'evaluate', but also writes everything to tensorboard
     # sample id specifies the folder to write to.
