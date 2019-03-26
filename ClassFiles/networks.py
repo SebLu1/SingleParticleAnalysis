@@ -26,21 +26,21 @@ class ConvNetClassifier(network):
         # convolutional network for feature extraction
         conv1 = tf.layers.conv3d(inputs=input, filters=16, kernel_size=[3, 3, 3], padding="same",
                                  activation=lrelu, reuse=tf.AUTO_REUSE, name='conv1')
-        conv2 = tf.layers.conv3d(inputs=conv1, filters=32, kernel_size=[3, 3, 3], padding="same",
+        conv2 = tf.layers.conv3d(inputs=conv1, filters=16, kernel_size=[3, 3, 3], padding="same",
                                  activation=lrelu, reuse=tf.AUTO_REUSE, name='conv2')
-        conv3 = tf.layers.conv3d(inputs=conv2, filters=32, kernel_size=[3, 3, 3], padding="same",
+        conv3 = tf.layers.conv3d(inputs=conv2, filters=16, kernel_size=[3, 3, 3], padding="same",
                                  activation=lrelu, reuse=tf.AUTO_REUSE, name='conv3', strides=2)
         # image size is now size/2
-        conv4 = tf.layers.conv3d(inputs=conv3, filters=64, kernel_size=[3, 3, 3], padding="same",
+        conv4 = tf.layers.conv3d(inputs=conv3, filters=32, kernel_size=[3, 3, 3], padding="same",
                                  activation=lrelu, reuse=tf.AUTO_REUSE, name='conv4', strides=2)
         # image size is now size/4
-        conv5 = tf.layers.conv3d(inputs=conv4, filters=64, kernel_size=[3, 3, 3], padding="same",
+        conv5 = tf.layers.conv3d(inputs=conv4, filters=32, kernel_size=[3, 3, 3], padding="same",
                                  activation=lrelu, reuse=tf.AUTO_REUSE, name='conv5', strides=2)
         # image size is now size/8
-        conv6 = tf.layers.conv3d(inputs=conv5, filters=128, kernel_size=[3, 3, 3], padding="same",
+        conv6 = tf.layers.conv3d(inputs=conv5, filters=64, kernel_size=[3, 3, 3], padding="same",
                                  activation=lrelu, reuse=tf.AUTO_REUSE, name='conv6', strides=2)
         # image size is now size/16
-        conv7 = tf.layers.conv3d(inputs=conv6, filters=128, kernel_size=[3, 3, 3], padding="same",
+        conv7 = tf.layers.conv3d(inputs=conv6, filters=64, kernel_size=[3, 3, 3], padding="same",
                                  activation=lrelu, reuse=tf.AUTO_REUSE, name='conv7', strides=2)
 
         # reshape for classification
