@@ -83,7 +83,7 @@ class AdversarialRegulariser(object):
         self.quality = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square(self.ground_truth - self.reconstruction),
                                                             axis=(1, 2, 3))))
 
-        sliceN = IMAGE_SIZE[3]/2
+        sliceN = int(IMAGE_SIZE[3]/2)
         # logging tools
         with tf.name_scope('Network_Optimization'):
             dd = tf.summary.scalar('Data_Difference', self.wasserstein_loss)
