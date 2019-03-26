@@ -3,6 +3,8 @@ import tensorflow as tf
 from ClassFiles.networks import ConvNetClassifier
 import ClassFiles.ut as ut
 from ClassFiles.ut import fftshift_tf
+from ClassFiles.ut import l2
+from ClassFiles.ut import normalize
 
 IMAGE_SIZE = (None, 96, 96, 96, 1)
 FOURIER_SIZE = (None, 96, 96, 49, 1)
@@ -110,16 +112,18 @@ class AdversarialRegulariser(object):
         self.load()
 
     def evaluate(self, fourierData):
+        scale = l2(fourierData)
+        fourierData=fourierData/scale
         real_data = ut.irfft(fourierData)
         real_data = ut.unify_form(real_data)
         grad = self.sess.run(self.pic_grad, feed_dict={self.reconstruction: real_data})
-        return ut.adjoing_irfft(grad[0,...,0])
+        return scale*ut.adjoing_irfft(grad[0,...,0])
 
     # trains the network with the groundTruths and adversarial exemples given. If Flag fourier_data is false,
     # the adversarial exemples are expected to be in real space
     def train(self, groundTruth, adversarial, learning_rate, fourier_data =True):
-        groundTruth = ut.unify_form(groundTruth)
-        adversarial = ut.unify_form(adversarial)
+        groundTruth = normalize(ut.unify_form(groundTruth))
+        adversarial = normalize(ut.unify_form(adversarial))
         if fourier_data:
             self.sess.run(self.optimizer, feed_dict={self.true: groundTruth, self.fourier_data: adversarial,
                                                      self.learning_rate: learning_rate})
@@ -129,8 +133,8 @@ class AdversarialRegulariser(object):
 
     # Input as in 'train', but writes results to tensorboard instead
     def test(self, groundTruth, adversarial, fourier_data =True):
-        groundTruth = ut.unify_form(groundTruth)
-        adversarial = ut.unify_form(adversarial)
+        groundTruth = normalize(ut.unify_form(groundTruth))
+        adversarial = normalize(ut.unify_form(adversarial))
         if fourier_data:
             merged, step = self.sess.run([self.merged_network, self.global_step],
                                          feed_dict={self.true: groundTruth, self.fourier_data: adversarial})
@@ -142,7 +146,9 @@ class AdversarialRegulariser(object):
     # Logging method for minimization. Computes the gradients as 'evaluate', but also writes everything to tensorboard
     # sample id specifies the folder to write to.
     def log_optimization(self, groundTruth, fourierData, id, step):
-        groundTruth = ut.unify_form(groundTruth)
+        groundTruth = normalize(ut.unify_form(groundTruth))
+        scale = l2(fourierData)
+        fourierData = fourierData/scale
         real_data = ut.irfft(fourierData)
         real_data = ut.unify_form(real_data)
         writer = tf.summary.FileWriter(self.path + '/Logs/Picture_Opt/' + id)
@@ -151,7 +157,7 @@ class AdversarialRegulariser(object):
                                            self.ground_truth: groundTruth})
         writer.add_summary(summary, step)
         writer.flush()
-        return ut.adjoing_irfft(grad[0,...,0])
+        return scale*ut.adjoing_irfft(grad[0,...,0])
 
 
     def save(self):

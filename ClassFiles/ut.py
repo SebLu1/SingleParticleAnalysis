@@ -4,6 +4,20 @@ from odl.contrib import tensorflow
 import numpy as np
 import fnmatch
 
+
+def l2(vector):
+    return np.sqrt(np.mean(np.square(vector)))
+
+
+def normalize(vector):
+    if not vector.shape[0] == 96:
+        for k in range(vector.shape[0]):
+            vector[k, ...] = vector[k, ...]/l2(vector[k, ...])
+    else:
+        vector = vector/l2(vector)
+    return vector
+
+
 def find(pattern, path):
     result = []
     for root, dirs, files in os.walk(path):
@@ -11,6 +25,7 @@ def find(pattern, path):
             if fnmatch.fnmatch(name, pattern):
                 result.append(os.path.join(root, name).replace("\\", "/"))
     return result
+
 
 def create_single_folder(folder):
     # creates folder and catches error if it exists already
