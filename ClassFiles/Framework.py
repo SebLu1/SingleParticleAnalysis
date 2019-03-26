@@ -83,14 +83,16 @@ class AdversarialRegulariser(object):
         self.quality = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square(self.ground_truth - self.reconstruction),
                                                             axis=(1, 2, 3))))
 
+        sliceN = tf.cast((tf.shape(self.ground_truth)[3]/2), dtype=tf.int32)
         # logging tools
         with tf.name_scope('Network_Optimization'):
             dd = tf.summary.scalar('Data_Difference', self.wasserstein_loss)
             lr = tf.summary.scalar('Lipschitz_Regulariser', self.regulariser_was)
             ol = tf.summary.scalar('Overall_Net_Loss', self.loss_was)
-            self.merged_network = tf.summary.merge([dd, lr, ol])
+            re = tf.summary.image('Adversarial', self.gen[..., sliceN, :], max_outputs=1)
+            gt = tf.summary.image('GroundTruth', self.true[..., sliceN, :], max_outputs=1)
+            self.merged_network = tf.summary.merge([dd, lr, ol, re, gt])
 
-        sliceN = tf.cast((tf.shape(self.ground_truth)[3]/2), dtype=tf.int32)
         with tf.name_scope('Picture_Optimization'):
             wasser_loss = tf.summary.scalar('Wasserstein_Loss', self.was_cor)
             recon = tf.summary.image('Reconstruction', self.cut_reco[..., sliceN, :], max_outputs=1)
