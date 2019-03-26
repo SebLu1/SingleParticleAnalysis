@@ -5,13 +5,13 @@ import fnmatch
 
 GPU_ids = '2'
 
-mk_dirs = False
+mk_dirs = True
 create_data = True
-
+SGD = True
 EM = False
 
-SGD = True
-NUM_MOLECULES = 20
+START_MOL = 0
+END_MOL = 50
 
 def runCommand(cmd_string):
     sp.call(cmd_string.split(' '))
@@ -29,11 +29,11 @@ def find_PDB_ID(pattern, path):
     return result
 
 base_path = '/local/scratch/public/sl767/MRC_Data'
-train_path = base_path + '/org/training/1'
+train_path = base_path + '/org/training/2'
 out_path = base_path + '/Data_002_10k'
 
 PDB_ID = find_PDB_ID('*.mrc', train_path)
-PDB_ID = PDB_ID[:NUM_MOLECULES]
+PDB_ID = PDB_ID[START_MOL: END_MOL]
 #PDB_ID = PDB_ID[:1] # To see that it works
 
 
@@ -43,10 +43,10 @@ noise_level = ['02']
 
 if mk_dirs:
     for p in PDB_ID:
-        runCommand('mkdir {OP}/mult_maps/{p}'.format(OP=out_path, p=p))
-        runCommand('mkdir {OP}/projs/{p}'.format(OP=out_path, p=p))
-        runCommand('mkdir {OP}/SGD/{p}'.format(OP=out_path, p=p))
-        runCommand('mkdir {OP}/EM/{p}'.format(OP=out_path, p=p))
+        runCommand('mkdir -p {OP}/mult_maps/{p}'.format(OP=out_path, p=p))
+        runCommand('mkdir -p {OP}/projs/{p}'.format(OP=out_path, p=p))
+        runCommand('mkdir -p {OP}/SGD/{p}'.format(OP=out_path, p=p))
+        runCommand('mkdir -p {OP}/EM/{p}'.format(OP=out_path, p=p))
         
 if create_data:
     # Scale phantoms
