@@ -112,12 +112,21 @@ class AdversarialRegulariser(object):
         self.load()
 
     def evaluate(self, fourierData):
-        scale = l2(fourierData)
-        fourierData=fourierData/scale
         real_data = ut.irfft(fourierData)
+        scale = l2(real_data)
+        real_data=real_data/scale
+        print(scale)
         real_data = ut.unify_form(real_data)
         grad = self.sess.run(self.pic_grad, feed_dict={self.reconstruction: real_data})
-        return scale*ut.adjoing_irfft(grad[0,...,0])
+        return scale*ut.adjoint_irfft(grad[0,...,0])
+    
+    def evaluate_real(self, real_data):
+        scale = l2(real_data)
+        real_data=real_data/scale
+        print(scale)
+        real_data = ut.unify_form(real_data)
+        grad = self.sess.run(self.pic_grad, feed_dict={self.reconstruction: real_data})
+        return scale*grad[0,...,0]
 
     # trains the network with the groundTruths and adversarial exemples given. If Flag fourier_data is false,
     # the adversarial exemples are expected to be in real space
@@ -147,9 +156,9 @@ class AdversarialRegulariser(object):
     # sample id specifies the folder to write to.
     def log_optimization(self, groundTruth, fourierData, id, step):
         groundTruth = normalize(ut.unify_form(groundTruth))
-        scale = l2(fourierData)
-        fourierData = fourierData/scale
         real_data = ut.irfft(fourierData)
+        scale = l2(real_data)
+        real_data=real_data/scale
         real_data = ut.unify_form(real_data)
         writer = tf.summary.FileWriter(self.path + '/Logs/Picture_Opt/' + id)
         summary, grad = self.sess.run([self.merged_pic, self.pic_grad],
@@ -157,7 +166,7 @@ class AdversarialRegulariser(object):
                                            self.ground_truth: groundTruth})
         writer.add_summary(summary, step)
         writer.flush()
-        return scale*ut.adjoing_irfft(grad[0,...,0])
+        return scale*ut.adjoint_irfft(grad[0,...,0])
 
 
     def save(self):

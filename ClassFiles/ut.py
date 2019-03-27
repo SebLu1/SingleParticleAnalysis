@@ -6,7 +6,7 @@ import fnmatch
 
 
 def l2(vector):
-    return np.sqrt(np.mean(np.square(vector)))
+    return np.sqrt(np.sum(np.square(vector)))
 
 
 def normalize(vector):
@@ -66,7 +66,7 @@ fftshift_tf = odl.contrib.tensorflow.as_tensorflow_layer(fftshift_odl())
 def irfft(fourierData):
     return np.fft.fftshift(np.fft.irfftn(fourierData))
 
-def adjoing_irfft(realData):
+def adjoint_irfft(realData):
     x=FOURIER_SIZE[0]
     y=FOURIER_SIZE[1]
     z=FOURIER_SIZE[2]

@@ -3,15 +3,15 @@ import subprocess as sp
 import os
 import fnmatch
 
-GPU_ids = '2'
+GPU_ids = '1'
 
-mk_dirs = True
-create_data = True
+mk_dirs = False
+create_projs = False
 SGD = True
-EM = False
+EM = True
 
 START_MOL = 0
-END_MOL = 50
+END_MOL = 20
 
 def runCommand(cmd_string):
     sp.call(cmd_string.split(' '))
@@ -29,16 +29,13 @@ def find_PDB_ID(pattern, path):
     return result
 
 base_path = '/local/scratch/public/sl767/MRC_Data'
-train_path = base_path + '/org/training/2'
+train_path = base_path + '/org/training/1'
 out_path = base_path + '/Data_002_10k'
 
 PDB_ID = find_PDB_ID('*.mrc', train_path)
 PDB_ID = PDB_ID[START_MOL: END_MOL]
 #PDB_ID = PDB_ID[:1] # To see that it works
-
-
-
-#PDB_ID = ['1H12']
+#PDB_ID = ['10MH']
 noise_level = ['02']
 
 if mk_dirs:
@@ -48,7 +45,7 @@ if mk_dirs:
         runCommand('mkdir -p {OP}/SGD/{p}'.format(OP=out_path, p=p))
         runCommand('mkdir -p {OP}/EM/{p}'.format(OP=out_path, p=p))
         
-if create_data:
+if create_projs:
     # Scale phantoms
     for p in PDB_ID:
         for n in noise_level:
@@ -61,10 +58,6 @@ if create_data:
             proj_cmd = 'relion_project --i {OP}/mult_maps/{p}/{p}_mult0{n}.mrc --o {OP}/projs/{p}/{p}_mult0{n} --nr_uniform 10000 --sigma_offset 2 --add_noise --white_noise 1' 
             proj_cmd = proj_cmd.format(OP=out_path, p=p, n=n)
             runCommand(proj_cmd)
-
-#mkdir -p Refine3D
-#mkdir -p Refine3D/${PDB_ID}
-
 
 # SGD
 if SGD:
@@ -81,6 +74,12 @@ if SGD:
 #            sgd_cmd += ' --healpix_order 2 --auto_local_healpix_order 4 --offset_range 5'
 #            sgd_cmd += ' --offset_step 2 --sym C1 --low_resol_join_halves 40 --norm --scale'
             sgd_cmd += ' --gpu "{GPU_ids}"'
+            sgd_cmd += ' --pad 1'
+            sgd_cmd += ' --particle_diameter 150 --flatten_solvent --zero_mask --oversampling 1'
+            sgd_cmd += ' --healpix_order 2 --auto_local_healpix_order 4 --offset_range 5'
+            sgd_cmd += ' --offset_step 2 --sym C1'
+#            sgd_cmd += ' --low_resol_join_halves 40'
+            sgd_cmd += ' --norm --scale'
 #            sgd_cmd += '--external_reconstruct --maximum_angular_sampling 1.8'
             sgd_cmd += ' --j 6' # Number of threads to run in parallel (only useful on multi-core machines)
             sgd_cmd += ' --pool 30' # Number of images to pool for each thread task
@@ -114,17 +113,21 @@ if EM:
     for p in PDB_ID:
         for n in noise_level:
             refine_cmd = 'mpirun -n 3 relion_refine_mpi --o {OP}/EM/{p}/{p}_mult0{n}'
-            refine_cmd += ' --auto_refine --split_random_halves --i {OP}/projs/{p}/{p}_mult0{n}.star'
-            refine_cmd += ' --ref {OP}/SGD/{p}/{p}_mult0{n}.mrc --ini_high 30'
+#            refine_cmd += ' --auto_refine --split_random_halves'
+            refine_cmd += ' --i {OP}/projs/{p}/{p}_mult0{n}.star'
+            refine_cmd += ' --ref {OP}/SGD/{p}/{p}_mult002_it300_class001.mrc --ini_high 30'
             refine_cmd += ' --pad 1'
-            refine_cmd += ' --particle_diameter 120 --flatten_solvent --zero_mask --oversampling 1'
+            refine_cmd += ' --particle_diameter 150 --flatten_solvent --zero_mask --oversampling 1'
             refine_cmd += ' --healpix_order 2 --auto_local_healpix_order 4 --offset_range 5'
-            refine_cmd += ' --offset_step 2 --sym C1 --low_resol_join_halves 40 --norm --scale'
+            refine_cmd += ' --offset_step 2 --sym C1'
+#            refine_cmd += ' --low_resol_join_halves 40'
+            refine_cmd += ' --norm --scale'
             refine_cmd += ' --gpu "{GPU_ids}" --external_reconstruct --maximum_angular_sampling 1.8'
             refine_cmd += ' --j 6' # Number of threads to run in parallel (only useful on multi-core machines)
             refine_cmd += ' --pool 30' # Number of images to pool for each thread task
             refine_cmd += ' --dont_combine_weights_via_disc'  # Send the large arrays of summed weights through the MPI network, instead of writing large files to disc
-#            refine_cmd += ' --preread_images' #  Use this to let the master process read all particles into memory. Be careful you have enough RAM for large data sets!
+            refine_cmd += ' --iter 10'
+            #            refine_cmd += ' --preread_images' #  Use this to let the master process read all particles into memory. Be careful you have enough RAM for large data sets!
             refine_cmd = refine_cmd.format(OP=out_path, p=p, n=n, GPU_ids=GPU_ids)
             runCommand(refine_cmd) 
     
