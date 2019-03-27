@@ -6,9 +6,9 @@ import random
 
 
 BATCH_SIZE = 1
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.00005
 LOOPS = 5
-STEPS = 100
+STEPS = 1000
 PATH = '/local/scratch/public/sl767/MRC_Data/org/'
 PATH_ADV = '/local/scratch/public/sl767/MRC_Data/Data_002_10k/SGD'
 
