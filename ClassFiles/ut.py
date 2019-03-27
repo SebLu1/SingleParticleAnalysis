@@ -3,20 +3,25 @@ import odl
 from odl.contrib import tensorflow
 import numpy as np
 import fnmatch
+import tensorflow as tf
 
 
 def l2(vector):
     return np.sqrt(np.mean(np.square(vector)))
 
 
-def normalize(vector):
-    if not vector.shape[0] == 96:
-        for k in range(vector.shape[0]):
-            vector[k, ...] = vector[k, ...]/l2(vector[k, ...])
-    else:
-        vector = vector/l2(vector)
-    return vector
+# def normalize(vector):
+#     if not vector.shape[0] == 96:
+#         for k in range(vector.shape[0]):
+#             vector[k, ...] = vector[k, ...]/l2(vector[k, ...])
+#     else:
+#         vector = vector/l2(vector)
+#     return vector
 
+def normalize_tf(tensor):
+    norms = tf.sqrt(tf.reduce_sum(tf.square(tensor), axis=(1,2,3)))
+    norms_exp = tf.expand_dims(tf.expand_dims(tf.expand_dims(norms, axis=1), axis=1), axis=1)
+    return tf.div(tensor, norms_exp)
 
 def find(pattern, path):
     result = []
