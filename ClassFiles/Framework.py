@@ -38,15 +38,21 @@ class AdversarialRegulariser(object):
         self.gen = fftshift_tf(real_data)
 
         # the network outputs
-        self.gen_was = self.network.net(self.gen)
-        self.data_was = self.network.net(self.true)
+        gen_normed=normalize_tf(self.gen)
+        true_normed=normalize_tf(self.true)
+        
+        self.gen_was = self.network.net(gen_normed)
+        self.data_was = self.network.net(true_normed)
 
         # Wasserstein loss
         self.wasserstein_loss = tf.reduce_mean(self.data_was - self.gen_was)
+                                 
+        # Gradient for logging
+        grad_log = tf.gradients(self.wasserstein_loss, gen_normed)[0]
 
         # intermediate point
         random_int = tf.random_uniform([tf.shape(self.true)[0], 1, 1, 1, 1], 0.0, 1.0)
-        self.inter = tf.multiply(self.gen, random_int) + tf.multiply(self.true, 1 - random_int)
+        self.inter = tf.multiply(gen_normed, random_int) + tf.multiply(true_normed, 1 - random_int)
         self.inter_was = tf.reduce_sum(self.network.net(self.inter))
 
         # calculate derivative at intermediate point
@@ -87,20 +93,25 @@ class AdversarialRegulariser(object):
 
         sliceN = int(IMAGE_SIZE[3]/2)
         # logging tools
+        l = []
         with tf.name_scope('Network_Optimization'):
-            dd = tf.summary.scalar('Data_Difference', self.wasserstein_loss)
-            lr = tf.summary.scalar('Lipschitz_Regulariser', self.regulariser_was)
-            ol = tf.summary.scalar('Overall_Net_Loss', self.loss_was)
-            re = tf.summary.image('Adversarial', self.gen[..., sliceN, :], max_outputs=1)
-            gt = tf.summary.image('GroundTruth', self.true[..., sliceN, :], max_outputs=1)
-            self.merged_network = tf.summary.merge([dd, lr, ol, re, gt])
+            l.append(tf.summary.scalar('Data_Difference', self.wasserstein_loss))
+            l.append(tf.summary.scalar('Lipschitz_Regulariser', self.regulariser_was))
+            l.append(tf.summary.scalar('Overall_Net_Loss', self.loss_was))
+            l.append(tf.summary.scalar('Norm_Input_true', tf.norm(self.true)))
+            l.append(tf.summary.scalar('Norm_Input_adv', tf.norm(self.gen)))
+            l.append(tf.summary.image('Adversarial', tf.reduce_max(gen_normed, axis=3), max_outputs=1))
+            l.append(tf.summary.image('GroundTruth', tf.reduce_max(true_normed, axis=3), max_outputs=1))
+            l.append(tf.summary.image('Gradient', tf.reduce_max(tf.abs(grad_log), axis=3), max_outputs=1))
+            l.append(tf.summary.scalar('Norm_Gradient', tf.norm(grad_log)))
+            self.merged_network = tf.summary.merge(l)
 
-        with tf.name_scope('Picture_Optimization'):
-            wasser_loss = tf.summary.scalar('Wasserstein_Loss', self.was_cor)
-            recon = tf.summary.image('Reconstruction', self.cut_reco[..., sliceN, :], max_outputs=1)
-            ground_truth = tf.summary.image('Ground_truth', self.ground_truth[..., sliceN, :], max_outputs=1)
-            quality_assesment = tf.summary.scalar('L2_to_ground_truth', self.quality)
-            self.merged_pic = tf.summary.merge([wasser_loss, quality_assesment, recon, ground_truth])
+#         with tf.name_scope('Picture_Optimization'):
+#             wasser_loss = tf.summary.scalar('Wasserstein_Loss', self.was_cor)
+#             recon = tf.summary.image('Reconstruction', self.cut_reco[..., sliceN, :], max_outputs=1)
+#             ground_truth = tf.summary.image('Ground_truth', self.ground_truth[..., sliceN, :], max_outputs=1)
+#             quality_assesment = tf.summary.scalar('L2_to_ground_truth', self.quality)
+#             self.merged_pic = tf.summary.merge([wasser_loss, quality_assesment, recon, ground_truth])
 
         # set up the logger
         self.writer = tf.summary.FileWriter(self.path + '/Logs/Network_Optimization/')
@@ -122,8 +133,8 @@ class AdversarialRegulariser(object):
     # trains the network with the groundTruths and adversarial exemples given. If Flag fourier_data is false,
     # the adversarial exemples are expected to be in real space
     def train(self, groundTruth, adversarial, learning_rate, fourier_data =True):
-        groundTruth = normalize(ut.unify_form(groundTruth))
-        adversarial = normalize(ut.unify_form(adversarial))
+        groundTruth = ut.unify_form(groundTruth)
+        adversarial = ut.unify_form(adversarial)
         if fourier_data:
             self.sess.run(self.optimizer, feed_dict={self.true: groundTruth, self.fourier_data: adversarial,
                                                      self.learning_rate: learning_rate})
@@ -133,8 +144,8 @@ class AdversarialRegulariser(object):
 
     # Input as in 'train', but writes results to tensorboard instead
     def test(self, groundTruth, adversarial, fourier_data =True):
-        groundTruth = normalize(ut.unify_form(groundTruth))
-        adversarial = normalize(ut.unify_form(adversarial))
+        groundTruth = ut.unify_form(groundTruth)
+        adversarial = ut.unify_form(adversarial)
         if fourier_data:
             merged, step = self.sess.run([self.merged_network, self.global_step],
                                          feed_dict={self.true: groundTruth, self.fourier_data: adversarial})
