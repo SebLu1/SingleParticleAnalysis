@@ -1,9 +1,9 @@
 import os
 import tensorflow as tf
 from ClassFiles.networks import ConvNetClassifier
+from ClassFiles.networks import ResNetClassifier
 import ClassFiles.ut as ut
 from ClassFiles.ut import fftshift_tf
-from ClassFiles.ut import l2
 from ClassFiles.ut import normalize_tf
 
 IMAGE_SIZE = (None, 96, 96, 96, 1)
@@ -20,7 +20,7 @@ class AdversarialRegulariser(object):
     def __init__(self, path, data_augmentation=data_augmentation_default):
 
         self.path =path
-        self.network = ConvNetClassifier()
+        self.network = ResNetClassifier()
         self.sess = tf.InteractiveSession()
         self.run_options = tf.RunOptions(report_tensor_allocations_upon_oom = True)
 

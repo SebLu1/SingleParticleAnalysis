@@ -52,11 +52,69 @@ class ConvNetClassifier(network):
 
         # Output network results
         return output
-    
-    
+
+
+def apply_conv(x, filters=32, kernel_size=3, he_init=True):
+    if he_init:
+        initializer = tf.contrib.layers.variance_scaling_initializer()
+    else:
+        initializer = tf.contrib.layers.xavier_initializer()
+
+    kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=1e-5)
+
+    return tf.layers.conv3d(x,
+                            filters=filters, kernel_size=kernel_size,
+                            padding='SAME',
+                            kernel_initializer=initializer,
+                            kernel_regularizer=kernel_regularizer)
+
+
+def activation(x):
+    with tf.name_scope('activation'):
+        return tf.nn.leaky_relu(x)
+
+
+def meanpool(x):
+    with tf.name_scope('meanpool'):
+        return tf.layers.average_pooling3d(
+            x,
+            2,
+            2,
+            padding='same',
+            data_format='channels_last',
+        )
+
+
+def resblock(x, filters):
+    with tf.name_scope('resblock'):
+        x = tf.identity(x)
+        update = apply_conv(activation(x), filters=filters)
+        update = apply_conv(activation(update), filters=filters)
+
+        skip = apply_conv(x, filters=filters, kernel_size=1)
+        return skip + update
+
+
 class ResNetClassifier(network):
-    
-    def net(self, input
+    def net(self, x):
+        with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
+            with tf.name_scope('pre_process'):
+                x0 = apply_conv(x, filters=16, kernel_size=3)
+
+            with tf.name_scope('x1'):
+                x1 = resblock(x0, 16)  # 96
+
+            with tf.name_scope('x2'):
+                x2 = resblock(meanpool(x1), filters=32)  # 48
+
+            with tf.name_scope('x3'):
+                x3 = resblock(meanpool(x2), filters=64)  # 24
+
+            with tf.name_scope('x4'):
+                x4 = resblock(meanpool(x3), filters=128)  # 12
+
+            with tf.name_scope('post_process'):
+                return tf.reduce_mean(x4, axis=[1, 2, 3, 4])
 
 
 
