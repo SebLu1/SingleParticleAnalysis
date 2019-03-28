@@ -7,7 +7,7 @@ import tensorflow as tf
 
 
 def l2(vector):
-    return np.sqrt(np.sum(np.square(vector)))
+    return np.sqrt(np.sum(np.square(np.abs(vector))))
 
 
 # def normalize(vector):

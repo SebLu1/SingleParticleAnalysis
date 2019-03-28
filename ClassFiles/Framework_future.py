@@ -11,11 +11,13 @@ FOURIER_SIZE = (None, 96, 96, 49, 1)
 # Weight on gradient regularization
 LMB = 20
 
+def data_augmentation_default(gt, adv):
+    return gt, adv
 
 class AdversarialRegulariser(object):
 
     # sets up the network architecture
-    def __init__(self, path):
+    def __init__(self, path, data_augmentation=data_augmentation_default):
 
         self.path =path
         self.network = ConvNetClassifier()
@@ -38,8 +40,7 @@ class AdversarialRegulariser(object):
         self.gen = fftshift_tf(real_data)
 
         # the network outputs
-        gen_normed=normalize_tf(self.gen)
-        true_normed=normalize_tf(self.true)
+        true_normed, gen_normed = data_augmentation(normalize_tf(self.true), normalize_tf(self.gen))
         
         self.gen_was = self.network.net(gen_normed)
         self.data_was = self.network.net(true_normed)
@@ -47,8 +48,8 @@ class AdversarialRegulariser(object):
         # Wasserstein loss
         self.wasserstein_loss = tf.reduce_mean(self.data_was - self.gen_was)
                                  
-        # Gradient for logging
-        grad_log = tf.gradients(self.wasserstein_loss, gen_normed)[0]
+        # Gradient for reconstruction
+        self.gradient = tf.gradients(tf.reduce_sum(self.gen_was), gen_normed)[0]
 
         # intermediate point
         random_int = tf.random_uniform([tf.shape(self.true)[0], 1, 1, 1, 1], 0.0, 1.0)
@@ -70,28 +71,6 @@ class AdversarialRegulariser(object):
         self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.loss_was,
                                                                                 global_step=self.global_step)
 
-        ### The reconstruction network ###
-        # placeholders
-        self.reconstruction = tf.placeholder(shape=IMAGE_SIZE, dtype=tf.float32)
-        self.ground_truth = tf.placeholder(shape=IMAGE_SIZE, dtype=tf.float32)
-
-        # the loss functional
-        self.was_output = tf.reduce_mean(self.network.net(self.reconstruction))
-        self.was_cor = self.was_output - tf.reduce_mean(self.network.net(self.ground_truth))
-
-        # get the batch size - all gradients have to be scaled by the batch size as they are taken over previously
-        # averaged quantities already. Makes gradients scaling batch size inveriant
-        batch_s = tf.cast(tf.shape(self.reconstruction)[0], tf.float32)
-
-        # Optimization for the picture
-        self.pic_grad = tf.gradients(self.was_output * batch_s, self.reconstruction)[0]
-
-        # Measure quality of reconstruction
-        self.cut_reco = tf.clip_by_value(self.reconstruction, 0.0, 1.0)
-        self.quality = tf.reduce_mean(tf.sqrt(tf.reduce_sum(tf.square(self.ground_truth - self.reconstruction),
-                                                            axis=(1, 2, 3))))
-
-        sliceN = int(IMAGE_SIZE[3]/2)
         # logging tools
         l = []
         with tf.name_scope('Network_Optimization'):
@@ -102,8 +81,8 @@ class AdversarialRegulariser(object):
             l.append(tf.summary.scalar('Norm_Input_adv', tf.norm(self.gen)))
             l.append(tf.summary.image('Adversarial', tf.reduce_max(gen_normed, axis=3), max_outputs=1))
             l.append(tf.summary.image('GroundTruth', tf.reduce_max(true_normed, axis=3), max_outputs=1))
-            l.append(tf.summary.image('Gradient', tf.reduce_max(tf.abs(grad_log), axis=3), max_outputs=1))
-            l.append(tf.summary.scalar('Norm_Gradient', tf.norm(grad_log)))
+            l.append(tf.summary.image('Gradient', tf.reduce_max(tf.abs(self.gradient), axis=3), max_outputs=1))
+            l.append(tf.summary.scalar('Norm_Gradient', tf.norm(self.gradient)))
             self.merged_network = tf.summary.merge(l)
 
 #         with tf.name_scope('Picture_Optimization'):
@@ -123,19 +102,14 @@ class AdversarialRegulariser(object):
         self.load()
 
     def evaluate(self, fourierData):
-        real_data = ut.irfft(fourierData)
-        real_data = ut.unify_form(real_data)
-        scale = l2(real_data)
-        real_data=real_data/scale
-        grad = self.sess.run(self.pic_grad, feed_dict={self.reconstruction: real_data})
+        fourierData = ut.unify_form(fourierData)
+        grad = self.sess.run(self.gradient, feed_dict={self.fourier_data: fourierData})
         return ut.adjoint_irfft(grad[0,...,0])
     
     def evaluate_real(self, real_data):
         real_data = ut.unify_form(real_data)
-        scale = l2(real_data)
-        real_data=real_data/scale
-        grad = self.sess.run(self.pic_grad, feed_dict={self.reconstruction: real_data})
-        return (grad[0,...,0])        
+        grad = self.sess.run(self.gradient, feed_dict={self.gen: real_data})
+        return (grad[0,...,0])    
 
     # trains the network with the groundTruths and adversarial exemples given. If Flag fourier_data is false,
     # the adversarial exemples are expected to be in real space
@@ -160,22 +134,6 @@ class AdversarialRegulariser(object):
             merged, step = self.sess.run([self.merged_network, self.global_step], 
                                          feed_dict={self.true: groundTruth, self.gen: adversarial})
         self.writer.add_summary(merged, global_step=step)
-
-    # Logging method for minimization. Computes the gradients as 'evaluate', but also writes everything to tensorboard
-    # sample id specifies the folder to write to.
-    def log_optimization(self, groundTruth, fourierData, id, step):
-        groundTruth = normalize(ut.unify_form(groundTruth))
-        scale = l2(fourierData)
-        fourierData = fourierData/scale
-        real_data = ut.irfft(fourierData)
-        real_data = ut.unify_form(real_data)
-        writer = tf.summary.FileWriter(self.path + '/Logs/Picture_Opt/' + id)
-        summary, grad = self.sess.run([self.merged_pic, self.pic_grad],
-                                feed_dict={self.reconstruction: real_data,
-                                           self.ground_truth: groundTruth})
-        writer.add_summary(summary, step)
-        writer.flush()
-        return scale*ut.adjoint_irfft(grad[0,...,0])
 
 
     def save(self):

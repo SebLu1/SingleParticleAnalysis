@@ -22,9 +22,9 @@ class network(ABC):
 class ConvNetClassifier(network):
     # classical classifier with convolutional layers with strided convolutions and two dense layers at the end
 
-    def net(self, input):
+    def net(self, inp):
         # convolutional network for feature extraction
-        conv1 = tf.layers.conv3d(inputs=input, filters=16, kernel_size=[3, 3, 3], padding="same",
+        conv1 = tf.layers.conv3d(inputs=inp, filters=16, kernel_size=[3, 3, 3], padding="same",
                                  activation=lrelu, reuse=tf.AUTO_REUSE, name='conv1')
         conv2 = tf.layers.conv3d(inputs=conv1, filters=16, kernel_size=[3, 3, 3], padding="same",
                                  activation=lrelu, reuse=tf.AUTO_REUSE, name='conv2')
@@ -52,6 +52,11 @@ class ConvNetClassifier(network):
 
         # Output network results
         return output
+    
+    
+class ResNetClassifier(network):
+    
+    def net(self, input
 
 
 
