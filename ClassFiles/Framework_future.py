@@ -1,6 +1,5 @@
 import os
 import tensorflow as tf
-from ClassFiles.networks import ConvNetClassifier
 from ClassFiles.networks import ResNetClassifier
 import ClassFiles.ut as ut
 from ClassFiles.ut import fftshift_tf
@@ -23,7 +22,6 @@ class AdversarialRegulariser(object):
         self.network = ResNetClassifier()
         self.sess = tf.InteractiveSession()
         self.run_options = tf.RunOptions(report_tensor_allocations_upon_oom = True)
-
 
         ut.create_single_folder(self.path+'/Data')
         ut.create_single_folder(self.path + '/Logs')
@@ -50,6 +48,9 @@ class AdversarialRegulariser(object):
                                  
         # Gradient for reconstruction
         self.gradient = tf.gradients(tf.reduce_sum(self.gen_was), gen_normed)[0]
+
+        # Gradient for trakcing
+        gradient_track = tf.gradients(tf.reduce_sum(self.data_was), true_normed)[0]
 
         # intermediate point
         random_int = tf.random_uniform([tf.shape(self.true)[0], 1, 1, 1, 1], 0.0, 1.0)
@@ -79,10 +80,19 @@ class AdversarialRegulariser(object):
             l.append(tf.summary.scalar('Overall_Net_Loss', self.loss_was))
             l.append(tf.summary.scalar('Norm_Input_true', tf.norm(self.true)))
             l.append(tf.summary.scalar('Norm_Input_adv', tf.norm(self.gen)))
-            l.append(tf.summary.image('Adversarial', tf.reduce_max(gen_normed, axis=3), max_outputs=1))
-            l.append(tf.summary.image('GroundTruth', tf.reduce_max(true_normed, axis=3), max_outputs=1))
-            l.append(tf.summary.image('Gradient', tf.reduce_max(tf.abs(self.gradient), axis=3), max_outputs=1))
             l.append(tf.summary.scalar('Norm_Gradient', tf.norm(self.gradient)))
+            with tf.name_scope('Maximum_Projection'):
+                l.append(tf.summary.image('Adversarial', tf.reduce_max(gen_normed, axis=3), max_outputs=1))
+                l.append(tf.summary.image('GroundTruth', tf.reduce_max(true_normed, axis=3), max_outputs=1))
+                l.append(tf.summary.image('Gradient_Adv', tf.reduce_max(tf.abs(self.gradient), axis=3), max_outputs=1))
+                l.append(tf.summary.image('Gradient_GT', tf.reduce_max(tf.abs(gradient_track), axis=3), max_outputs=1))
+            slice = int(IMAGE_SIZE[3]/2)
+            with tf.name_scope('Slice_Projection'):
+                l.append(tf.summary.image('Adversarial', gen_normed[..., slice, :], max_outputs=1))
+                l.append(tf.summary.image('GroundTruth', true_normed[..., slice, :], max_outputs=1))
+                l.append(tf.summary.image('Gradient_Adv', self.gradient[..., slice, :],  max_outputs=1))
+                l.append(tf.summary.image('Gradient_GT', gradient_track[..., slice, :], max_outputs=1))
+
             self.merged_network = tf.summary.merge(l)
 
 #         with tf.name_scope('Picture_Optimization'):
