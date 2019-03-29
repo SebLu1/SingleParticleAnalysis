@@ -91,15 +91,15 @@ def resblock(x, filters):
         update = apply_conv(activation(x), filters=filters)
         update = apply_conv(activation(update), filters=filters)
 
-        skip = apply_conv(x, filters=filters, kernel_size=1)
+        skip = apply_conv(x, filters=filters, kernel_size=1, he_init=False)
         return skip + update
 
 
 class ResNetClassifier(network):
-    def net(self, x):
+    def net(self, x_in):
         with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
             with tf.name_scope('pre_process'):
-                x0 = apply_conv(x, filters=16, kernel_size=3)
+                x0 = apply_conv(x_in, filters=16, kernel_size=3)
 
             with tf.name_scope('x1'):
                 x1 = resblock(x0, 16)  # 96
@@ -112,9 +112,23 @@ class ResNetClassifier(network):
 
             with tf.name_scope('x4'):
                 x4 = resblock(meanpool(x3), filters=128)  # 12
+                
+            with tf.name_scope('x5'):
+                x5 = resblock(meanpool(x4), filters=128)  # 6
 
+            #with tf.name_scope('post_process'):
+            #    return tf.reduce_mean(x4, axis=[1, 2, 3, 4])
+            
             with tf.name_scope('post_process'):
-                return tf.reduce_mean(x4, axis=[1, 2, 3, 4])
+                base_case = tf.sqrt(tf.reduce_sum(x_in ** 2, axis=[1, 2, 3, 4]))
+                
+            with tf.name_scope('flat'):
+                flat = tf.contrib.layers.flatten(x5)
+                flat = tf.layers.dense(flat, 128, activation=activation)
+                flat = tf.layers.dense(flat, 1)
+                
+            with tf.name_scope('return'):
+                return base_case + flat
 
 
 

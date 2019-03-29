@@ -60,14 +60,16 @@ def get_batch(training_data=True):
     return true, adv
 
 def data_augmentation(gt, adv):
-#     eps = tf.random.uniform(shape=(BATCH_SIZE, 1, 1, 1, 1), minval=0, maxval=1.5)
-#     adv_new = tf.multiply(eps, gt) + tf.multiply(tf.ones(shape=(BATCH_SIZE,1,1,1,1))-eps, adv)
+    eps = tf.random.uniform(shape=(BATCH_SIZE, 1, 1, 1, 1), minval=0, maxval=1.5)
+    adv_inter = tf.multiply(eps, gt) + tf.multiply(tf.ones(shape=(BATCH_SIZE,1,1,1,1))-eps, adv)
     y = tf.spectral.rfft3d(gt[...,0])
     phase = 2*np.pi*tf.random_uniform(shape=tf.shape(y), minval= 0, maxval=1)
     com_phase = tf.exp(1j*tf.cast(phase, tf.complex64))
     y = tf.multiply(com_phase, y)
-    return gt, tf.expand_dims(tf.spectral.irfft3d(y), axis=-1)
-
+    adv_phase = tf.expand_dims(tf.spectral.irfft3d(y), axis=-1)
+    eps1 = tf.random.uniform(shape=(BATCH_SIZE, 1, 1, 1, 1), minval=0, maxval=0.5)
+    adv_new = tf.multiply(eps1, adv_phase) + tf.multiply(tf.ones(shape=(BATCH_SIZE,1,1,1,1))-eps1, adv_inter)
+    return gt, adv_new
 
 saves_path = '/local/scratch/public/sl767/SPA/Saves/Adversarial_Regulariser/SGD_Trained/phase_augmentation/'
 regularizer = AdversarialRegulariser(saves_path, data_augmentation)
@@ -82,7 +84,7 @@ def train(steps):
     for k in range(steps):
         gt, adv = get_batch()
         regularizer.train(groundTruth=gt, adversarial=adv, learning_rate=LEARNING_RATE, fourier_data =False)
-        if k%50==0:
+        if k%10==0:
             evaluate()
     regularizer.save()
 
