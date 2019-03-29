@@ -60,14 +60,14 @@ def get_batch(training_data=True):
     return true, adv
 
 def data_augmentation(gt, adv):
-    eps = tf.random.uniform(shape=(BATCH_SIZE, 1, 1, 1, 1), minval=0, maxval=1.5)
+    eps = tf.random_uniform(shape=(BATCH_SIZE, 1, 1, 1, 1), minval=0, maxval=1.5)
     adv_inter = tf.multiply(eps, gt) + tf.multiply(tf.ones(shape=(BATCH_SIZE,1,1,1,1))-eps, adv)
     y = tf.spectral.rfft3d(gt[...,0])
     phase = 2*np.pi*tf.random_uniform(shape=tf.shape(y), minval= 0, maxval=1)
     com_phase = tf.exp(1j*tf.cast(phase, tf.complex64))
     y = tf.multiply(com_phase, y)
     adv_phase = tf.expand_dims(tf.spectral.irfft3d(y), axis=-1)
-    eps1 = tf.random.uniform(shape=(BATCH_SIZE, 1, 1, 1, 1), minval=0, maxval=0.5)
+    eps1 = tf.random_uniform(shape=(BATCH_SIZE, 1, 1, 1, 1), minval=0, maxval=0.5)
     adv_new = tf.multiply(eps1, adv_phase) + tf.multiply(tf.ones(shape=(BATCH_SIZE,1,1,1,1))-eps1, adv_inter)
     return gt, adv_new
 
