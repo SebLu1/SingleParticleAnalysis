@@ -38,14 +38,14 @@ def oneStepEM(x, PDB_ID, GPU_ids='2'):
     # FSC
     fsc_cmd = 'relion_image_handler --i {IMP}'
     fsc_cmd += ' --fsc {TP}/{PDB_ID_first}/{PDB_ID}.mrc'
-    fsc_cmd += ' --o {FP}'
+#    fsc_cmd += ' --o {FP}'
 
     fsc_cmd = fsc_cmd.format(IMP=input_mrc_path, TP=training_path,
                              PDB_ID=PDB_ID, PDB_ID_first=PDB_ID[0], FP=fsc_path)
-    runCommand(fsc_cmd)#, fsc_path)
+    runCommand(fsc_cmd, fsc_path)
     
-#    fsc_star_file = load_star(fsc_path)
-#    fsc = fsc_star_file['data_fsc']['lnFourierShellCorrelation']
+    fsc_star_file = load_star(fsc_path)
+    fsc = fsc_star_file['fsc']['rlnFourierShellCorrelation']
 
     ######################
     #EM
@@ -80,7 +80,7 @@ def oneStepEM(x, PDB_ID, GPU_ids='2'):
     acc_rot = aux_star_file['model_classes']['rlnAccuracyRotations']
    
     
-    return acc_rot, output_mrc_path[:-4] + '_it001_class001.mrc'
+    return fsc, acc_rot, output_mrc_path[:-4] + '_it001_class001.mrc'
 
 if __name__ == '__main__':
 
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     with mrcfile.open(sgd_path) as mrc:
        sgd_data = mrc.data
 
-    acc_rot, output_mrc_path = oneStepEM(sgd_data, '1O20')
+    fsc, acc_rot, output_mrc_path = oneStepEM(sgd_data, '1O20')
     print('#################')
     print('OUTPUT')
     print(acc_rot)
