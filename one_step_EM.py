@@ -38,7 +38,7 @@ def oneStepEM(x, PDB_ID, GPU_ids='2'):
     # FSC
     fsc_cmd = 'relion_image_handler --i {IMP}'
     fsc_cmd += ' --fsc {TP}/{PDB_ID_first}/{PDB_ID}.mrc'
-#    fsc_cmd += ' --o {FP}'
+#    fsc_cmd += ' --o {FP}' #  Problems with encoding if we write to .star here. Write instead during sp.call()
 
     fsc_cmd = fsc_cmd.format(IMP=input_mrc_path, TP=training_path,
                              PDB_ID=PDB_ID, PDB_ID_first=PDB_ID[0], FP=fsc_path)
