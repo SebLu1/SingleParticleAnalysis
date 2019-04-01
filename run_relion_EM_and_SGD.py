@@ -7,7 +7,7 @@ GPU_ids = '1'
 
 mk_dirs = False
 create_projs = False
-SGD = True
+SGD = False
 EM = True
 
 START_MOL = 0
@@ -35,7 +35,7 @@ out_path = base_path + '/Data_002_10k'
 PDB_ID = find_PDB_ID('*.mrc', train_path)
 PDB_ID = PDB_ID[START_MOL: END_MOL]
 #PDB_ID = PDB_ID[:1] # To see that it works
-#PDB_ID = ['10MH']
+PDB_ID = ['10MH']
 noise_level = ['02']
 
 if mk_dirs:
