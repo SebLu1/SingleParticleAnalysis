@@ -1,6 +1,4 @@
-import numpy as np
 import mrcfile
-from matplotlib import pyplot as plt
 import collections
 from ClassFiles.relion_fixed_it import load_star
 import subprocess as sp
@@ -39,7 +37,6 @@ def oneStepEM(x, PDB_ID, GPU_ids='2'):
     fsc_cmd = 'relion_image_handler --i {IMP}'
     fsc_cmd += ' --fsc {TP}/{PDB_ID_first}/{PDB_ID}.mrc'
 #    fsc_cmd += ' --o {FP}' #  Problems with encoding if we write to .star here. Write instead during sp.call()
-
     fsc_cmd = fsc_cmd.format(IMP=input_mrc_path, TP=training_path,
                              PDB_ID=PDB_ID, PDB_ID_first=PDB_ID[0], FP=fsc_path)
     runCommand(fsc_cmd, fsc_path)
@@ -47,9 +44,9 @@ def oneStepEM(x, PDB_ID, GPU_ids='2'):
     fsc_star_file = load_star(fsc_path)
     fsc = fsc_star_file['fsc']['rlnFourierShellCorrelation']
 
+
     ######################
     #EM
-
     refine_cmd = 'mpirun -n 3 relion_refine_mpi --o {OMP}'
 #    refine_cmd += ' --auto_refine'
 #    refine_cmd += ' --split_random_halves'
@@ -81,6 +78,7 @@ def oneStepEM(x, PDB_ID, GPU_ids='2'):
    
     
     return fsc, acc_rot, output_mrc_path[:-4] + '_it001_class001.mrc'
+
 
 if __name__ == '__main__':
 
