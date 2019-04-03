@@ -12,15 +12,14 @@ class Registrator(object):
     def __init__(self):
         self.sess = tf.InteractiveSession()
 
-        self.image_size = self.IMAGE_SIZE
         self.image_feed = tf.placeholder(shape=self.IMAGE_SIZE, dtype=tf.float32)
         self.reference_feed = tf.placeholder(shape=self.IMAGE_SIZE, dtype=tf.float32)
         self.noise = tf.placeholder(shape=(), dtype=tf.float32)
 
-        basis_exp = tf.Variable(np.zeros(shape=(3, 3)))
+        basis_exp = tf.Variable(tf.zeros(shape=(3, 3)))
         skew_exp = basis_exp - tf.transpose(basis_exp)
         self.rotation = tf.linalg.expm(skew_exp)
-        self.translation = tf.Variable(np.zeros(shape=(3, 1)))
+        self.translation = tf.Variable(tf.zeros(shape=(3, 1)))
         self.theta = tf.concat([self.rotation, self.translation], axis=-1)
 
         self.rot_image = tensorflow_rotations.rot3d(self.image_feed, self.theta)

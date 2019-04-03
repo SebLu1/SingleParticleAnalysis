@@ -69,7 +69,7 @@ def batch_affine_warp3d(imgs, theta):
     grids = tf.reshape(grids, [n_batch, 3, -1])
 
     ### TODO: This code has been changed from batch_matmul to matmul.
-    T_g = tf.matmul(tf.cast(matrix, tf.float64), tf.cast(grids, tf.float64)) + t
+    T_g = tf.matmul(matrix, grids) + t
     T_g = tf.reshape(T_g, [n_batch, 3, xlen, ylen, zlen])
     output = batch_warp3d(imgs, T_g)
     return output
