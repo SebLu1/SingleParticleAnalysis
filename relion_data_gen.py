@@ -2,8 +2,14 @@
 import subprocess as sp
 import os
 import fnmatch
+import sys
+import platform
 
-GPU_ids = '2'
+SCRIPT_ARGS = sys.argv
+#print(SCRIPT_ARGS)
+
+GPU_ids = ''# '0:1' 
+NUM_MPI = 3 #  1 + number of GPU's to use
 
 mk_dirs = True
 create_projs = True
@@ -15,6 +21,15 @@ SGD_lowpass_frec = 30
 
 START_MOL = 0
 END_MOL = 30
+
+PLATFORM_NODE = platform.node()
+
+if PLATFORM_NODE == 'motel':
+    print(PLATFORM_NODE)
+    base_path = '/local/scratch/public/sl767/MRC_Data'
+else:
+    base_path = '/home/sl767/rds/hpc-work/MRC_Data'
+#    raise Exception
 
 def runCommand(cmd_string):
     sp.call(cmd_string.split(' '))
@@ -31,15 +46,20 @@ def find_PDB_ID(pattern, path):
                 result.append((os.path.join(root, name).replace("\\", "/"))[-8:-4])
     return result
 
-base_path = '/local/scratch/public/sl767/MRC_Data'
-train_path = base_path + '/org/training'
-out_path = base_path + '/Data_002_10k'
 
-PDB_ID = find_PDB_ID('*.mrc', '{TP}/3'.format(TP=train_path))
+train_path = base_path + '/org/training'
+test_path = base_path + '/org/eval'
+
+#train_path = test_path #  Hack for now
+noise_level = ['02'] #  Right now this has to be a list with a single element
+out_path = base_path + '/Data_0{}_10k'.format(noise_level[0])
+
+PDB_ID = find_PDB_ID('*.mrc', '{TrP}/3'.format(TrP=train_path))
+#PDB_ID = find_PDB_ID('*.mrc', '{TP}/9'.format(TP=train_path))
 PDB_ID = PDB_ID[START_MOL: END_MOL]
 #PDB_ID = PDB_ID[:1] # To see that it works
-#PDB_ID = ['3A09']
-noise_level = ['02']
+#PDB_ID = ['3PE7']
+
 
 if mk_dirs:
     for p in PDB_ID:
@@ -80,7 +100,7 @@ if SGD_ini_method == 'lowpass':
 if run_SGD:
     for p in PDB_ID:
         for n in noise_level:
-            sgd_cmd = 'mpirun -n 3 relion_refine_mpi --o {OP}/SGD/{p}/{p}_mult0{n}'
+            sgd_cmd = 'mpirun -n {NUM_MPI} relion_refine_mpi --o {OP}/SGD/{p}/{p}_mult0{n}'
             sgd_cmd += ' --i {OP}/projs/{p}/{p}_mult0{n}.star'
             if SGD_ini_method == 'lowpass':
                 sgd_cmd += ' --ref {OP}/LowPass/{p}/{p}_lowpass_{SGD_lowpass_frec}_0{n}.mrc'  
@@ -105,13 +125,13 @@ if run_SGD:
                                                            # instead of writing large files to disc
             sgd_cmd += ' --sgd'  # Perform stochastic gradient descent instead of default expectation-maximization
             sgd_cmd += ' --sgd_write_iter 50' # : Write out model every so many iterations in SGD (default is writing out all iters)
-            sgd_cmd = sgd_cmd.format(OP=out_path, p=p, n=n, GPU_ids=GPU_ids, SGD_lowpass_frec=SGD_lowpass_frec)
+            sgd_cmd = sgd_cmd.format(OP=out_path, p=p, n=n, GPU_ids=GPU_ids, SGD_lowpass_frec=SGD_lowpass_frec, NUM_MPI=NUM_MPI)
             runCommand(sgd_cmd)
 
 if run_EM:
     for p in PDB_ID:
         for n in noise_level:
-            refine_cmd = 'mpirun -n 3 relion_refine_mpi --o {OP}/EM/{p}/{p}_mult0{n}'
+            refine_cmd = 'mpirun -n {NUM_MPI} relion_refine_mpi --o {OP}/EM/{p}/{p}_mult0{n}'
             refine_cmd += ' --auto_refine --split_random_halves'
             refine_cmd += ' --i {OP}/projs/{p}/{p}_mult0{n}.star'
             refine_cmd += ' --ref {OP}/SGD/{p}/{p}_mult0{n}_it300_class001.mrc --ini_high 30'
@@ -121,7 +141,8 @@ if run_EM:
             refine_cmd += ' --offset_step 2 --sym C1'
             refine_cmd += ' --low_resol_join_halves 40'
             refine_cmd += ' --norm --scale'
-            refine_cmd += ' --gpu "{GPU_ids}" --external_reconstruct' # --maximum_angular_sampling 1.8'
+            refine_cmd += ' --gpu "{GPU_ids}"'
+            refine_cmd += ' --external_reconstruct' # --maximum_angular_sampling 1.8'
             refine_cmd += ' --j 6' # Number of threads to run in parallel (only useful on multi-core machines)
             refine_cmd += ' --pool 30' # Number of images to pool for each thread task
             refine_cmd += ' --dont_combine_weights_via_disc'  # Send the large arrays of summed weights through the MPI network,
@@ -129,5 +150,5 @@ if run_EM:
 #            refine_cmd += ' --iter 10'
 #            refine_cmd += ' --preread_images' #  Use this to let the master process read all particles into memory.
                                                #  Be careful you have enough RAM for large data sets!
-            refine_cmd = refine_cmd.format(OP=out_path, p=p, n=n, GPU_ids=GPU_ids)
+            refine_cmd = refine_cmd.format(OP=out_path, p=p, n=n, GPU_ids=GPU_ids, NUM_MPI=NUM_MPI)
             runCommand(refine_cmd) 
