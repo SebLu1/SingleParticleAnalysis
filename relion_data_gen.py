@@ -76,7 +76,7 @@ if mk_dirs:
     for p in PDB_ID:
         runCommand('mkdir -p {OP}/mult_maps/{p}'.format(OP=out_path, p=p))
         runCommand('mkdir -p {OP}/projs/{p}'.format(OP=out_path, p=p))
-        runCommand('mkdir -p {OP}/SGD/{p}'.forma--healpix_ordert(OP=out_path, p=p))
+        runCommand('mkdir -p {OP}/SGD/{p}'.format(OP=out_path, p=p))
         runCommand('mkdir -p {OP}/EM/{p}'.format(OP=out_path, p=p))
         runCommand('mkdir -p {OP}/LowPass/{p}'.format(OP=out_path, p=p))
         
