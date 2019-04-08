@@ -69,7 +69,7 @@ PDB_ID = PDB_ID[START_MOL: END_MOL]
 #PDB_ID = ['3PE7']
 
 if len(SCRIPT_ARGS) == 4:
-    PDB_ID = [SRICPT_ARGS[3]] 
+    PDB_ID = [SCRIPT_ARGS[3]] 
 
 
 if mk_dirs:
