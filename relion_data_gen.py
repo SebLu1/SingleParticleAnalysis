@@ -8,6 +8,7 @@ import platform
 SCRIPT_ARGS = sys.argv
 MPI_MODE = SCRIPT_ARGS[1]
 train_folder = SCRIPT_ARGS[2]
+
 #print(SCRIPT_ARGS)
 
 GPU_ids = ''# '0:1' 
@@ -66,6 +67,9 @@ PDB_ID = find_PDB_ID('*.mrc', '{TrP}/{TrF}'.format(TrP=train_path, TrF=train_fol
 PDB_ID = PDB_ID[START_MOL: END_MOL]
 #PDB_ID = PDB_ID[:1] # To see that it works
 #PDB_ID = ['3PE7']
+
+if len(SCRIPT_ARGS) == 4:
+    PDB_ID = [SRICPT_ARGS[3]] 
 
 
 if mk_dirs:
@@ -160,7 +164,7 @@ if run_EM:
             refine_cmd += ' --ref {OP}/SGD/{p}/{p}_mult0{n}_it300_class001.mrc --ini_high 30'
             refine_cmd += ' --pad 1'
             refine_cmd += ' --particle_diameter 150 --flatten_solvent --zero_mask --oversampling 1'
-            refine_cmd += ' --healpix_order 2.5 --offset_range 5'
+            refine_cmd += ' --healpix_order 2 --offset_range 5'
             refine_cmd += ' --auto_local_healpix_order 4'
             refine_cmd += ' --offset_step 2 --sym C1'
             refine_cmd += ' --low_resol_join_halves 40'
