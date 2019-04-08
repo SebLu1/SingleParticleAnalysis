@@ -9,10 +9,10 @@ SCRIPT_ARGS = sys.argv
 #print(SCRIPT_ARGS)
 
 GPU_ids = ''# '0:1' 
-NUM_MPI = 3 #  1 + number of GPU's to use
+NUM_MPI = 2 #  At least 3 if --split_random_halves is used
 
-mk_dirs = True
-create_projs = True
+mk_dirs = False
+create_projs = False
 run_SGD = True
 run_EM = True
 
@@ -24,12 +24,15 @@ END_MOL = 30
 
 PLATFORM_NODE = platform.node()
 
+MPI_MODE = None
+
 if PLATFORM_NODE == 'motel':
     print(PLATFORM_NODE)
     base_path = '/local/scratch/public/sl767/MRC_Data'
+    MPI_MODE = 'mpirun'
 else:
     base_path = '/home/sl767/rds/hpc-work/MRC_Data'
-#    raise Exception
+    MPI_MODE = 'srun'
 
 def runCommand(cmd_string):
     sp.call(cmd_string.split(' '))
@@ -65,7 +68,7 @@ if mk_dirs:
     for p in PDB_ID:
         runCommand('mkdir -p {OP}/mult_maps/{p}'.format(OP=out_path, p=p))
         runCommand('mkdir -p {OP}/projs/{p}'.format(OP=out_path, p=p))
-        runCommand('mkdir -p {OP}/SGD/{p}'.format(OP=out_path, p=p))
+        runCommand('mkdir -p {OP}/SGD/{p}'.forma--healpix_ordert(OP=out_path, p=p))
         runCommand('mkdir -p {OP}/EM/{p}'.format(OP=out_path, p=p))
         runCommand('mkdir -p {OP}/LowPass/{p}'.format(OP=out_path, p=p))
         
@@ -100,7 +103,13 @@ if SGD_ini_method == 'lowpass':
 if run_SGD:
     for p in PDB_ID:
         for n in noise_level:
-            sgd_cmd = 'mpirun -n {NUM_MPI} relion_refine_mpi --o {OP}/SGD/{p}/{p}_mult0{n}'
+            if MPI_MODE == 'mpirun':
+                sgd_cmd = 'mpirun -n {NUM_MPI} relion_refine_mpi'
+            elif MPI_MODE == 'srun':
+                sgd_cmd = 'srun --mpi=pmi2 relion_refine_mpi'
+            else:
+                raise Exception 
+            sgd_cmd += ' --o {OP}/SGD/{p}/{p}_mult0{n}'
             sgd_cmd += ' --i {OP}/projs/{p}/{p}_mult0{n}.star'
             if SGD_ini_method == 'lowpass':
                 sgd_cmd += ' --ref {OP}/LowPass/{p}/{p}_lowpass_{SGD_lowpass_frec}_0{n}.mrc'  
@@ -131,13 +140,20 @@ if run_SGD:
 if run_EM:
     for p in PDB_ID:
         for n in noise_level:
-            refine_cmd = 'mpirun -n {NUM_MPI} relion_refine_mpi --o {OP}/EM/{p}/{p}_mult0{n}'
+            if MPI_MODE == 'mpirun':
+                sgd_cmd = 'mpirun -n {NUM_MPI} relion_refine_mpi'
+            elif MPI_MODE == 'srun':
+                sgd_cmd = 'srun --mpi=pmi2 relion_refine_mpi'
+            else:
+                raise Exception 
+            refine_cmd += ' --o {OP}/EM/{p}/{p}_mult0{n}'
             refine_cmd += ' --auto_refine --split_random_halves'
             refine_cmd += ' --i {OP}/projs/{p}/{p}_mult0{n}.star'
             refine_cmd += ' --ref {OP}/SGD/{p}/{p}_mult0{n}_it300_class001.mrc --ini_high 30'
             refine_cmd += ' --pad 1'
             refine_cmd += ' --particle_diameter 150 --flatten_solvent --zero_mask --oversampling 1'
-            refine_cmd += ' --healpix_order 2 --auto_local_healpix_order 4 --offset_range 5'
+            refine_cmd += ' --healpix_order 2.5 --offset_range 5'
+            refine_cmd += ' --auto_local_healpix_order 4'
             refine_cmd += ' --offset_step 2 --sym C1'
             refine_cmd += ' --low_resol_join_halves 40'
             refine_cmd += ' --norm --scale'
@@ -147,7 +163,7 @@ if run_EM:
             refine_cmd += ' --pool 30' # Number of images to pool for each thread task
             refine_cmd += ' --dont_combine_weights_via_disc'  # Send the large arrays of summed weights through the MPI network,
                                                               # instead of writing large files to disc
-#            refine_cmd += ' --iter 10'
+#            refine_cmd += ' --iter 30'
 #            refine_cmd += ' --preread_images' #  Use this to let the master process read all particles into memory.
                                                #  Be careful you have enough RAM for large data sets!
             refine_cmd = refine_cmd.format(OP=out_path, p=p, n=n, GPU_ids=GPU_ids, NUM_MPI=NUM_MPI)
