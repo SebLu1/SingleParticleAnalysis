@@ -6,13 +6,15 @@ import sys
 import platform
 
 SCRIPT_ARGS = sys.argv
+MPI_MODE = SCRIPT_ARGS[1]
+train_folder = SCRIPT_ARGS[2]
 #print(SCRIPT_ARGS)
 
 GPU_ids = ''# '0:1' 
 NUM_MPI = 2 #  At least 3 if --split_random_halves is used
 
-mk_dirs = False
-create_projs = False
+mk_dirs = True
+create_projs = True
 run_SGD = True
 run_EM = True
 
@@ -24,16 +26,18 @@ END_MOL = 30
 
 PLATFORM_NODE = platform.node()
 
-MPI_MODE = None
+#MPI_MODE = None
 
 if PLATFORM_NODE == 'motel':
     print(PLATFORM_NODE)
     base_path = '/local/scratch/public/sl767/MRC_Data'
-    MPI_MODE = 'mpirun'
+#    MPI_MODE = 'mpirun'
 else:
     base_path = '/home/sl767/rds/hpc-work/MRC_Data'
-    MPI_MODE = 'srun'
+#    MPI_MODE = 'srun'
 
+
+    
 def runCommand(cmd_string):
     sp.call(cmd_string.split(' '))
 
@@ -57,7 +61,7 @@ test_path = base_path + '/org/eval'
 noise_level = ['02'] #  Right now this has to be a list with a single element
 out_path = base_path + '/Data_0{}_10k'.format(noise_level[0])
 
-PDB_ID = find_PDB_ID('*.mrc', '{TrP}/3'.format(TrP=train_path))
+PDB_ID = find_PDB_ID('*.mrc', '{TrP}/{TrF}'.format(TrP=train_path, TrF=train_folder))
 #PDB_ID = find_PDB_ID('*.mrc', '{TP}/9'.format(TP=train_path))
 PDB_ID = PDB_ID[START_MOL: END_MOL]
 #PDB_ID = PDB_ID[:1] # To see that it works
@@ -107,6 +111,8 @@ if run_SGD:
                 sgd_cmd = 'mpirun -n {NUM_MPI} relion_refine_mpi'
             elif MPI_MODE == 'srun':
                 sgd_cmd = 'srun --mpi=pmi2 relion_refine_mpi'
+            elif MPI_MODE == 'mpirun-hpc':
+                sgd_cmd = 'mpirun relion_refine_mpi'
             else:
                 raise Exception 
             sgd_cmd += ' --o {OP}/SGD/{p}/{p}_mult0{n}'
@@ -141,9 +147,11 @@ if run_EM:
     for p in PDB_ID:
         for n in noise_level:
             if MPI_MODE == 'mpirun':
-                sgd_cmd = 'mpirun -n {NUM_MPI} relion_refine_mpi'
+                refine_cmd = 'mpirun -n {NUM_MPI} relion_refine_mpi'
             elif MPI_MODE == 'srun':
-                sgd_cmd = 'srun --mpi=pmi2 relion_refine_mpi'
+                refine_cmd = 'srun --mpi=pmi2 relion_refine_mpi'
+            elif MPI_MODE == 'mpirun-hpc':
+                refine_cmd = 'mpirun relion_refine_mpi'
             else:
                 raise Exception 
             refine_cmd += ' --o {OP}/EM/{p}/{p}_mult0{n}'
