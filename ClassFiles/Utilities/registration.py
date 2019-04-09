@@ -9,17 +9,20 @@ class Registrator(object):
     IMAX = 200
     LEARNING_RATE = 1e-2
 
-    def __init__(self):
+    def __init__(self, batch_size=1):
+        self.batch_size=batch_size
         self.sess = tf.InteractiveSession()
 
         self.image_feed = tf.placeholder(shape=self.IMAGE_SIZE, dtype=tf.float32)
         self.reference_feed = tf.placeholder(shape=self.IMAGE_SIZE, dtype=tf.float32)
         self.noise = tf.placeholder(shape=(), dtype=tf.float32)
-
-        basis_exp = tf.Variable(tf.zeros(shape=(3, 3)))
-        skew_exp = basis_exp - tf.transpose(basis_exp)
+        
+        basis_exp = tf.get_variable(name='Rotations', shape=[batch_size, 3, 3], 
+                                    initializer = tf.initializers.zeros)
+        skew_exp = basis_exp - tf.transpose(basis_exp, perm=[0,2,1])
         self.rotation = tf.linalg.expm(skew_exp)
-        self.translation = tf.Variable(tf.zeros(shape=(3, 1)))
+        self.translation = tf.get_variable(name='Translations', shape=[batch_size, 3, 1], 
+                                           initializer = tf.initializers.zeros)
         self.theta = tf.concat([self.rotation, self.translation], axis=-1)
 
         self.rot_image = tensorflow_rotations.rot3d(self.image_feed, self.theta)
@@ -32,11 +35,13 @@ class Registrator(object):
         self.optimizer = tf.train.AdamOptimizer(learning_rate=self.LEARNING_RATE).minimize(self.data_fit)
 
         with tf.control_dependencies([self.optimizer]):
-            self.assign = tf.group(tf.assign_add(basis_exp, np.pi * self.noise * tf.random_normal(shape=(3, 3))),
-                            tf.assign_add(self.translation, self.noise * tf.random_normal(shape=(3, 1))))
+            self.assign = tf.group(tf.assign_add(basis_exp, np.pi * self.noise * tf.random_normal(shape=(batch_size, 3, 3))),
+                            tf.assign_add(self.translation, self.noise * tf.random_normal(shape=(batch_size, 3, 1))))
         tf.global_variables_initializer().run()
 
     def register(self, image, reference, printing=True):
+        # Can only feed input that fits the batch size the graph has been generated with
+        assert image.shape[0]==self.batch_size
         tf.global_variables_initializer().run()
 
         for k in range(self.IMAX):
