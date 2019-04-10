@@ -75,6 +75,22 @@ class Rescaler(object):
             tensor = tensor*self.scales[0]
 
 
+def get_coordinate_change(power=1.0, cutoff=100.0):
+    print(cutoff)
+    print(power)
+    X, Y, Z = np.meshgrid(np.linspace(-1, 1, 96),
+                          np.linspace(-1, 1, 96),
+                          np.linspace(-1, 1, 96))
+
+    R = np.sqrt(X ** 2 + Y ** 2 + Z ** 2)
+    R = np.fft.fftshift(R)[:, :, :49]
+
+    R = 1 / R ** power
+    R = np.minimum(R, cutoff * np.min(R))
+    R = R / np.max(R)
+    return R
+
+
 IMAGE_SIZE = [96, 96, 96]
 FOURIER_SIZE = [96, 96, 49]
 space = odl.uniform_discr([0, 0, 0], [1, 1, 1], IMAGE_SIZE, dtype='float32')
