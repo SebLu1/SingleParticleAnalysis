@@ -8,16 +8,15 @@ from ClassFiles.ut import normalize_tf
 IMAGE_SIZE = (None, 96, 96, 96, 1)
 FOURIER_SIZE = (None, 96, 96, 49, 1)
 
-#def data_augmentation_default(gt, adv):
-#    return gt, adv
+def data_augmentation_default(gt, adv):
+    return gt, adv
 
 class Denoiser(object):
 
-    # sets up the network architecture
     def __init__(self, path, data_augmentation=data_augmentation_default):
 
         self.path = path
-        self.network = ResNetClassifier()
+        self.network = UNet()
         self.sess = tf.InteractiveSession()
         self.run_options = tf.RunOptions(report_tensor_allocations_upon_oom=True)
 
@@ -25,52 +24,22 @@ class Denoiser(object):
         ut.create_single_folder(self.path + '/Logs')
 
         ### Training the denoiser ###
-
-        # placeholders
-#        self.fourier_data = tf.placeholder(shape=FOURIER_SIZE, dtype=tf.complex64)
+        self.data = tf.placeholder(shape=IMAGE_SIZE, dtype=tf.float32)
         self.true = tf.placeholder(shape=IMAGE_SIZE, dtype=tf.float32)
         self.learning_rate = tf.placeholder(dtype=tf.float32)
 
-        # process the Fourier data
-#        real_data = tf.expand_dims(tf.spectral.irfft3d(self.fourier_data[...,0]), axis=-1)
-#        self.gen = fftshift_tf(real_data)
+        # Network outputs
+        true_normed, data_normed = data_augmentation(normalize_tf(self.true), normalize_tf(self.data))    
+        self.denoised = self.network.net(data)
 
-        # the network outputs
-        true_normed, gen_normed = data_augmentation(normalize_tf(self.true), normalize_tf(self.gen))
-        
-        self.gen_was = self.network.net(gen_normed)
-        self.data_was = self.network.net(true_normed)
+        # Loss
+        self.loss = 0.5 * tf.reduce_sum((self.true - self.denoised) ** 2)
 
-        # Wasserstein loss
-        self.wasserstein_loss = tf.reduce_mean(self.data_was - self.gen_was)
-                                 
-        # Gradient for reconstruction
-        self.gradient = tf.gradients(tf.reduce_sum(self.gen_was), gen_normed)[0]
-
-        # Gradient for trakcing
-        gradient_track = tf.gradients(tf.reduce_sum(self.data_was), true_normed)[0]
-
-        # intermediate point
-        random_int = tf.random_uniform([tf.shape(self.true)[0], 1, 1, 1, 1], 0.0, 1.0)
-        self.inter = tf.multiply(gen_normed, random_int) + tf.multiply(true_normed, 1 - random_int)
-        self.inter_was = tf.reduce_sum(self.network.net(self.inter))
-
-        # calculate derivative at intermediate point
-        self.gradient_was = tf.gradients(self.inter_was, self.inter)[0]
-
-        # take the L2 norm of that derivative
-        self.norm_gradient = tf.sqrt(tf.reduce_sum(tf.square(self.gradient_was), axis=(1, 2, 3)))
-        self.regulariser_was = tf.reduce_mean(tf.square(tf.nn.relu(self.norm_gradient - 1)))
-
-        # Overall Net Training loss
-        self.loss_was = self.wasserstein_loss + LMB * self.regulariser_was
-
-        # optimizer for Wasserstein network
+        # Optimizer
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
-        self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.loss_was,
-                                                                                global_step=self.global_step)
+        self.optimizer = tf.train.AdamOptimizer().minimize(self.loss, global_step=self.global_step)
 
-        # logging tools
+        # Logging tools
         l = []
         with tf.name_scope('Network_Optimization'):
             l.append(tf.summary.scalar('Data_Difference', self.wasserstein_loss))
@@ -93,13 +62,6 @@ class Denoiser(object):
 
             self.merged_network = tf.summary.merge(l)
 
-#         with tf.name_scope('Picture_Optimization'):
-#             wasser_loss = tf.summary.scalar('Wasserstein_Loss', self.was_cor)
-#             recon = tf.summary.image('Reconstruction', self.cut_reco[..., sliceN, :], max_outputs=1)
-#             ground_truth = tf.summary.image('Ground_truth', self.ground_truth[..., sliceN, :], max_outputs=1)
-#             quality_assesment = tf.summary.scalar('L2_to_ground_truth', self.quality)
-#             self.merged_pic = tf.summary.merge([wasser_loss, quality_assesment, recon, ground_truth])
-
         # set up the logger
         self.writer = tf.summary.FileWriter(self.path + '/Logs/Network_Optimization/')
 
@@ -109,15 +71,15 @@ class Denoiser(object):
         # load existing saves
         self.load()
 
-    def evaluate(self, fourierData):
-        fourierData = ut.unify_form(fourierData)
-        grad = self.sess.run(self.gradient, feed_dict={self.fourier_data: fourierData})
-        return ut.adjoint_irfft(grad[0,...,0])
+#    def evaluate(self, fourierData):
+#        fourierData = ut.unify_form(fourierData)
+#        grad = self.sess.run(self.gradient, feed_dict={self.fourier_data: fourierData})
+#        return ut.adjoint_irfft(grad[0,...,0])
     
-    def evaluate_real(self, real_data):
-        real_data = ut.unify_form(real_data)
-        grad = self.sess.run(self.gradient, feed_dict={self.gen: real_data})
-        return (grad[0,...,0])    
+#    def evaluate_real(self, real_data):
+#        real_data = ut.unify_form(real_data)
+#        grad = self.sess.run(self.gradient, feed_dict={self.gen: real_data})
+#        return (grad[0,...,0])    
 
     # trains the network with the groundTruths and adversarial exemples given. If Flag fourier_data is false,
     # the adversarial exemples are expected to be in real space
