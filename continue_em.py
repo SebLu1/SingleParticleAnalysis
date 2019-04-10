@@ -45,6 +45,9 @@ def continueEM(x, PDB_ID, em_iter_start, em_iter_finish=None, GPU_ids=''):
 
     
     training_path = '/local/scratch/public/sl767/MRC_Data/org/training'
+    if PDB_ID[0] == '9':
+        training_path = '/local/scratch/public/sl767/MRC_Data/org/eval'
+    
     fsc_path = '{BP}/OneStepEM/FSC/{PDB_ID}/{PDB_ID}_fsc.star'.format(BP=base_path, PDB_ID=PDB_ID)
     
     with mrcfile.new(input_mrc_path, overwrite=True) as mrc:
@@ -68,11 +71,20 @@ def continueEM(x, PDB_ID, em_iter_start, em_iter_finish=None, GPU_ids=''):
     refine_cmd = 'mpirun -n 3 relion_refine_mpi'
     refine_cmd += ' --continue {ISP}'
     refine_cmd += ' --o {OMP}'
+    refine_cmd += ' --auto_refine --split_random_halves'
+    refine_cmd += ' --pad 1'
+    refine_cmd += ' --particle_diameter 150 --flatten_solvent --zero_mask --oversampling 1'
+    refine_cmd += ' --healpix_order 2 --offset_range 5'
+    refine_cmd += ' --auto_local_healpix_order 4'
+    refine_cmd += ' --offset_step 2 --sym C1'
+    refine_cmd += ' --low_resol_join_halves 40'
     refine_cmd += ' --norm --scale'
-    refine_cmd += ' --gpu "{GPU_ids}" --external_reconstruct'
+    refine_cmd += ' --gpu "{GPU_ids}"'
+    refine_cmd += ' --external_reconstruct' # --maximum_angular_sampling 1.8'
     refine_cmd += ' --j 6' # Number of threads to run in parallel (only useful on multi-core machines)
     refine_cmd += ' --pool 30' # Number of images to pool for each thread task
-    refine_cmd += ' --dont_combine_weights_via_disc'  
+    refine_cmd += ' --dont_combine_weights_via_disc'  # Send the large arrays of summed weights through the MPI network,
+                                                      # instead of writing large files to disc
     refine_cmd += ' --auto_iter_max {EIF}' #  change this so that it's not hard coded
     refine_cmd = refine_cmd.format(OMP=output_mrc_path[:-4], GPU_ids=GPU_ids, ISP=input_star_path, EIF=em_iter_finish)
     
@@ -86,7 +98,7 @@ def continueEM(x, PDB_ID, em_iter_start, em_iter_finish=None, GPU_ids=''):
     aux_star_file = load_star(aux_star_path)
     acc_rot = aux_star_file['model_classes']['rlnAccuracyRotations']
    
-    return fsc, acc_rot, output_mrc_path[:-4] + '_it{EIF}_half1_class001.mrc'.format(EIF=em_iter_finish)
+    return fsc, acc_rot, output_mrc_path[:-4] + '_it{EIF}_half1_class001.mrc'.format(EIF=startingZeros(em_iter_finish))
 
 
 if __name__ == '__main__':

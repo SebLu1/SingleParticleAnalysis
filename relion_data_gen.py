@@ -12,9 +12,9 @@ train_folder = SCRIPT_ARGS[2]
 #print(SCRIPT_ARGS)
 
 GPU_ids = ''# '0:1' 
-NUM_MPI = 2 #  At least 3 if --split_random_halves is used
+NUM_MPI = 3 #  At least 3 if --split_random_halves is used
 
-mk_dirs = True
+mk_dirs = False
 create_projs = True
 run_SGD = True
 run_EM = True
@@ -58,7 +58,7 @@ def find_PDB_ID(pattern, path):
 train_path = base_path + '/org/training'
 test_path = base_path + '/org/eval'
 
-#train_path = test_path #  Hack for now
+train_path = test_path #  Hack for now
 noise_level = ['02'] #  Right now this has to be a list with a single element
 out_path = base_path + '/Data_0{}_10k'.format(noise_level[0])
 
@@ -66,7 +66,7 @@ PDB_ID = find_PDB_ID('*.mrc', '{TrP}/{TrF}'.format(TrP=train_path, TrF=train_fol
 #PDB_ID = find_PDB_ID('*.mrc', '{TP}/9'.format(TP=train_path))
 PDB_ID = PDB_ID[START_MOL: END_MOL]
 #PDB_ID = PDB_ID[:1] # To see that it works
-#PDB_ID = ['3PE7']
+PDB_ID = ['9ICA']
 
 if len(SCRIPT_ARGS) == 4:
     PDB_ID = [SCRIPT_ARGS[3]] 
@@ -161,7 +161,7 @@ if run_EM:
             refine_cmd += ' --o {OP}/EM/{p}/{p}_mult0{n}'
             refine_cmd += ' --auto_refine --split_random_halves'
             refine_cmd += ' --i {OP}/projs/{p}/{p}_mult0{n}.star'
-            refine_cmd += ' --ref {OP}/SGD/{p}/{p}_mult0{n}_it300_class001.mrc --ini_high 30'
+            refine_cmd += ' --ref {OP}/SGD/{p}/{p}_mult0{n}_it300_class001.mrc'# --ini_high 30'
             refine_cmd += ' --pad 1'
             refine_cmd += ' --particle_diameter 150 --flatten_solvent --zero_mask --oversampling 1'
             refine_cmd += ' --healpix_order 2 --offset_range 5'

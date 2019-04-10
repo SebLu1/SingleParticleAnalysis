@@ -1,6 +1,6 @@
 import mrcfile
 import numpy as np
-from ClassFiles.Framework import Denoiser
+from ClassFiles.Denoiser import Denoiser
 from ClassFiles.ut import find
 import random
 
@@ -57,7 +57,7 @@ def load_data(training_data=True):
         n = train_amount
     else:
         n = eval_amount
-    return get_image(random.randint(0, n), training=training_data)
+    return get_image(random.randint(0, n-1), training=training_data)
 
 
 def get_batch(training_data=True):
@@ -76,15 +76,15 @@ denoiser = Denoiser(saves_path)
 
 def evaluate():
     gt, adv = get_batch(training_data=True)
-    denoiser.test(groundTruth=gt, adversarial=adv)
+    denoiser.test(groundTruth=gt, noisy=adv)
 
 
 def train(steps):
     for k in range(steps):
         gt, adv = get_batch()
-        denoiser.train(groundTruth=gt, adversarial=adv,
+        denoiser.train(groundTruth=gt, noisy=adv,
                        learning_rate=LEARNING_RATE)
-        if k % 5 == 0:
+        if k % 50 == 0:
             evaluate()
     denoiser.save()
 

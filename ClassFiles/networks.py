@@ -161,19 +161,19 @@ class UNet(network):
                 x6 = resblock(upsample(x5), filters=64)  # 12
 
             with tf.name_scope('x7'):
-                x7 = resblock(upsample(tf.concat([x4, x6], -1)), filters=64)  # 24
+                x7 = resblock(upsample(tf.concat([x4, x6], -1)), filters=64, he_init=True)  # 24
 
             with tf.name_scope('x8'):
-                x8 = resblock(upsample(tf.concat([x3, x7], -1)), filters=32)  # 48
+                x8 = resblock(upsample(tf.concat([x3, x7], -1)), filters=32, he_init=True)  # 48
 
             with tf.name_scope('x9'):
-                x9 = resblock(upsample(tf.concat([x2, x8], -1)), filters=16)  # 96
+                x9 = resblock(upsample(tf.concat([x2, x8], -1)), filters=16, he_init=True)  # 96
 
             with tf.name_scope('x10'):
-                x10 = resblock(upsample(tf.concat([x1, x9], -1)), filters=16)
+                x10 = resblock(tf.concat([x1, x9], -1), filters=16, he_init=True)
 
             with tf.name_scope('post_process'):
-                return apply_conv(x10, filters=1, kernel_size=3)
+                return apply_conv(x10, filters=1, kernel_size=3, he_init=True)
 
 
 

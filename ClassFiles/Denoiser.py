@@ -15,7 +15,7 @@ def data_augmentation_default(gt, adv):
 
 class Denoiser(object):
 
-    def __init__(self, path, data_augmentation=data_augmentation_default):
+    def __init__(self, path, data_augmentation=data_augmentation_default, load=False):
 
         self.path = path
         self.network = UNet()
@@ -40,7 +40,7 @@ class Denoiser(object):
 
         # Optimizer
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
-        self.optimizer = tf.train.AdamOptimizer().minimize(self.loss, global_step=self.global_step)
+        self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss, global_step=self.global_step)
 
         # Logging tools
         summary_list = []
@@ -55,13 +55,13 @@ class Denoiser(object):
             with tf.name_scope('Maximum_Projection'):
                 summary_list.append(tf.summary.image('Noisy', tf.reduce_max(self.data_normed, axis=3), max_outputs=1))
                 summary_list.append(tf.summary.image('Ground Truth', tf.reduce_max(self.true_normed, axis=3), max_outputs=1))
-#                l.append(tf.summary.image('Gradient_Adv', tf.reduce_max(tf.abs(self.gradient), axis=3), max_outputs=1))
+                summary_list.append(tf.summary.image('Denoised', tf.reduce_max(tf.abs(self.denoised), axis=3), max_outputs=1))
 #                l.append(tf.summary.image('Gradient_GT', tf.reduce_max(tf.abs(gradient_track), axis=3), max_outputs=1))
             slice = int(IMAGE_SIZE[3]/2)
             with tf.name_scope('Slice_Projection'):
                 summary_list.append(tf.summary.image('Noisy', self.data_normed[..., slice, :], max_outputs=1))
                 summary_list.append(tf.summary.image('Ground Truth', self.true_normed[..., slice, :], max_outputs=1))
- #               l.append(tf.summary.image('Gradient_Adv', self.gradient[..., slice, :],  max_outputs=1))
+                summary_list.append(tf.summary.image('Denoised', self.denoised[..., slice, :],  max_outputs=1))
  #               l.append(tf.summary.image('Gradient_GT', gradient_track[..., slice, :], max_outputs=1))
 
             self.merged_network = tf.summary.merge(summary_list)
@@ -73,12 +73,13 @@ class Denoiser(object):
         tf.global_variables_initializer().run()
 
         # load existing saves
-        self.load()
+        if load:
+            self.load()
 
     def evaluate(self, data):
         return self.denoised.eval(feed_dict={self.data: data})
 
-    def train(self, groundTruth, noisy, learning_rate=1):
+    def train(self, groundTruth, noisy, learning_rate=1e-4):
         groundTruth = ut.unify_form(groundTruth)
         noisy = ut.unify_form(noisy)
         self.sess.run(self.optimizer,
