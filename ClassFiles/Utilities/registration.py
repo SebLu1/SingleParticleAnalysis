@@ -79,13 +79,13 @@ class LocalRegistrator(Registrator):
 
 
 class GlobalRegistrator(Registrator):
-    NOISE = 0.05
-    IMAX = 1000
+    NOISE = 0.01
+    IMAX = 2000
     LEARNING_RATE = 1e-2
 
     def register(self, image, reference, printing=True):
         # Can only feed input that fits the batch size the graph has been generated with
-        assert image.shape[0]==self.batch_size
+        assert image.shape[0] == self.batch_size
         self.initializer.run()
 
         for k in range(self.IMAX):
@@ -93,7 +93,7 @@ class GlobalRegistrator(Registrator):
                                                    feed_dict={self.image_feed: image,
                                                               self.reference_feed: reference,
                                                               self.noise: self.NOISE * np.sqrt(10 / (k + 10))})
-            if k % 10 == 0:
+            if k % 100 == 0:
                 print(loss)
 
         result, theta, rot, trans, loss = self.sess.run([self.rot_image, self.theta, self.rotation,
