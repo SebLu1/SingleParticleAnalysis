@@ -14,10 +14,12 @@ train_folder = SCRIPT_ARGS[2]
 GPU_ids = ''# '0:1' 
 NUM_MPI = 3 #  At least 3 if --split_random_halves is used
 
-mk_dirs = False
+mk_dirs = True
 create_projs = True
 run_SGD = True
 run_EM = True
+
+EVAL_DATA = False
 
 SGD_ini_method = 'lowpass'
 SGD_lowpass_frec = 30
@@ -26,6 +28,8 @@ START_MOL = 0
 END_MOL = 30
 
 PLATFORM_NODE = platform.node()
+
+EXT_RECO = 'REL'
 
 #MPI_MODE = None
 
@@ -39,12 +43,22 @@ else:
 
 
     
-def runCommand(cmd_string):
-    sp.call(cmd_string.split(' '))
+def runCommand(cmd_string, shell=False):
+    sp.call(cmd_string.split(' '), shell=shell)
 
+if EXT_RECO == 'REL':
+    RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE = '/home/sl767/bin/relion-devel-lmb/src/apps/external_reconstruct.cpp'
+elif EXT_RECO == 'AR':
+    RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE = '/home/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_AR.py'
+elif EXT_RECO == 'RED':
+    RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE = '/home/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_RED.py'
 
-RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE = '?'
-#runCommmand('export RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE={}'.format(RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE))
+if not EVAL_DATA:
+    pass
+#    runCommand('export RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE={}'.format(RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE), shell=True)
+
+print('RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE:')
+input(runCommand('echo $RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE', shell=True))
 
 def find_PDB_ID(pattern, path):
     result = []
@@ -58,19 +72,27 @@ def find_PDB_ID(pattern, path):
 train_path = base_path + '/org/training'
 test_path = base_path + '/org/eval'
 
-train_path = test_path #  Hack for now
-noise_level = ['02'] #  Right now this has to be a list with a single element
-out_path = base_path + '/Data_0{}_10k'.format(noise_level[0])
+#train_path = test_path #  Hack for now
+noise_level = ['012'] #  Right now this has to be a list with a single element
+out_path = base_path + '/Data/Data_0{}_10k'.format(noise_level[0])
 
+if EVAL_DATA:
+    out_path = out_path + '/eval'
+else:
+    out_path = out_path + '/train'
+    
 PDB_ID = find_PDB_ID('*.mrc', '{TrP}/{TrF}'.format(TrP=train_path, TrF=train_folder))
 #PDB_ID = find_PDB_ID('*.mrc', '{TP}/9'.format(TP=train_path))
 PDB_ID = PDB_ID[START_MOL: END_MOL]
 #PDB_ID = PDB_ID[:1] # To see that it works
-PDB_ID = ['9ICA']
+#PDB_ID = ['5A0M']
 
 if len(SCRIPT_ARGS) == 4:
     PDB_ID = [SCRIPT_ARGS[3]] 
 
+print(PDB_ID)
+print('Eval data: ', EVAL_DATA)
+input("Looks alright?")
 
 if mk_dirs:
     for p in PDB_ID:
@@ -97,7 +119,7 @@ if create_projs:
             proj_cmd = proj_cmd.format(OP=out_path, p=p, n=n)
             runCommand(proj_cmd)
 
-if SGD_ini_method == 'lowpass':
+if SGD_ini_method == 'lowpass' and run_SGD:
     for p in PDB_ID:
         for n in noise_level:
             lp_cmd = 'relion_image_handler --i {TP}/{p1}/{p}.mrc'
@@ -170,7 +192,9 @@ if run_EM:
             refine_cmd += ' --low_resol_join_halves 40'
             refine_cmd += ' --norm --scale'
             refine_cmd += ' --gpu "{GPU_ids}"'
-            refine_cmd += ' --external_reconstruct' # --maximum_angular_sampling 1.8'
+            if not EVAL_DATA:
+                refine_cmd += ' --external_reconstruct' #  No need to use this when generating eval data
+#--maximum_angular_sampling 1.8'
             refine_cmd += ' --j 6' # Number of threads to run in parallel (only useful on multi-core machines)
             refine_cmd += ' --pool 30' # Number of images to pool for each thread task
             refine_cmd += ' --dont_combine_weights_via_disc'  # Send the large arrays of summed weights through the MPI network,

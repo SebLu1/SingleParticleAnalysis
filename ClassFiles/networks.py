@@ -55,12 +55,14 @@ class ConvNetClassifier(network):
         return output
 
 
-def apply_conv(x, filters=32, kernel_size=3, he_init=True):
+def apply_conv(x, filters=32, kernel_size=3, he_init=True, factor=2.0, cst_ini=False):
     if he_init:
-        initializer = tf.contrib.layers.variance_scaling_initializer()
+        initializer = tf.contrib.layers.variance_scaling_initializer(factor=factor)
     else:
         initializer = tf.contrib.layers.xavier_initializer()
 
+    if cst_ini:
+        initializer = tf.constant_initializer(value=1e-2)
     kernel_regularizer = tf.contrib.layers.l2_regularizer(scale=1e-5)
 
     return tf.layers.conv3d(x,
@@ -92,13 +94,17 @@ def upsample(x):
         return l(x)
 
 
-def resblock(x, filters):
+def resblock(x, filters, he_init=False, factor=2.0):
     with tf.name_scope('resblock'):
         x = tf.identity(x)
+#        update = apply_conv(activation(x), filters=filters, he_init=he_init, factor=factor)
+#        update = apply_conv(activation(update), filters=filters, he_init=he_init, factor=factor)
         update = apply_conv(activation(x), filters=filters)
         update = apply_conv(activation(update), filters=filters)
+        
+#        skip = apply_conv(x, filters=filters, kernel_size=1, he_init=he_init, factor=factor, cst_ini=True)
+        skip = apply_conv(x, filters=filters, kernel_size=1, he_init=he_init, factor=factor)
 
-        skip = apply_conv(x, filters=filters, kernel_size=1, he_init=False)
         return skip + update
 
 
@@ -140,40 +146,40 @@ class UNet(network):
     def net(self, x_in):
         with tf.variable_scope('UNet', reuse=tf.AUTO_REUSE):
             with tf.name_scope('pre_process'):
-                x0 = apply_conv(x_in, filters=16, kernel_size=3)
+                x0 = apply_conv(x_in, filters=16, kernel_size=3, he_init=True, factor=1e-2)
 
             with tf.name_scope('x1'):
-                x1 = resblock(x0, 16)  # 96
+                x1 = resblock(x0, 16, he_init=True, factor=1e-2)  # 96
 
             with tf.name_scope('x2'):
-                x2 = resblock(meanpool(x1), filters=32)  # 48
+                x2 = resblock(meanpool(x1), filters=32, he_init=True, factor=1e-2)  # 48
 
             with tf.name_scope('x3'):
-                x3 = resblock(meanpool(x2), filters=64)  # 24
+                x3 = resblock(meanpool(x2), filters=64, he_init=True, factor=1e-2)  # 24
 
             with tf.name_scope('x4'):
-                x4 = resblock(meanpool(x3), filters=64)  # 12
+                x4 = resblock(meanpool(x3), filters=64, he_init=True, factor=1e-2)  # 12
 
             with tf.name_scope('x5'):
-                x5 = resblock(meanpool(x4), filters=128)  # 6
+                x5 = resblock(meanpool(x4), filters=128, he_init=True, factor=1e-2)  # 6
 
             with tf.name_scope('x6'):
-                x6 = resblock(upsample(x5), filters=64)  # 12
+                x6 = resblock(upsample(x5), filters=64, he_init=True, factor=1e-2)  # 12
 
             with tf.name_scope('x7'):
-                x7 = resblock(upsample(tf.concat([x4, x6], -1)), filters=64, he_init=True)  # 24
+                x7 = resblock(upsample(tf.concat([x4, x6], -1)), filters=64, he_init=True, factor=1e-2)  # 24
 
             with tf.name_scope('x8'):
-                x8 = resblock(upsample(tf.concat([x3, x7], -1)), filters=32, he_init=True)  # 48
+                x8 = resblock(upsample(tf.concat([x3, x7], -1)), filters=32, he_init=True, factor=1e-2)  # 48
 
             with tf.name_scope('x9'):
-                x9 = resblock(upsample(tf.concat([x2, x8], -1)), filters=16, he_init=True)  # 96
+                x9 = resblock(upsample(tf.concat([x2, x8], -1)), filters=16, he_init=True, factor=1e-2)  # 96
 
             with tf.name_scope('x10'):
-                x10 = resblock(tf.concat([x1, x9], -1), filters=16, he_init=True)
+                x10 = resblock(tf.concat([x1, x9], -1), filters=16, he_init=True, factor=1e-2)
 
             with tf.name_scope('post_process'):
-                return apply_conv(x10, filters=1, kernel_size=3, he_init=True)
+                return apply_conv(x10, filters=1, kernel_size=3, he_init=True, factor=1e-2)
 
 
 

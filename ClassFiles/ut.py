@@ -5,6 +5,9 @@ import numpy as np
 import fnmatch
 import tensorflow as tf
 
+BASE_PATH = '/local/scratch/public/sl767/MRC_Data/'
+DATA_PATH = BASE_PATH + 'Data/'
+GT_PATH = BASE_PATH + 'org/'
 
 def l2(vector):
     return np.sqrt(np.sum(np.square(np.abs(vector))))
@@ -16,6 +19,60 @@ def l2(vector):
 #     else:
 #         vector = vector/l2(vector)
 #     return vector
+
+def startingZeros(n):
+    if n < 10:
+        return '00' + str(n) 
+    elif n < 100:
+        return '0' + str(n)
+    else:
+        return str(n)
+
+
+def getRecos(noise, method, iter='Final', eval_data=False):
+    path_list = []
+    folder = DATA_PATH + 'Data_0{}_10k/'.format(noise)
+    if eval_data == True:
+        folder += 'eval/'
+    else:
+        folder += 'train/'
+    if method == 'EM':
+        folder += 'EM'
+        if iter == 'Final':
+            path_list = find('*mult0{}_class001.mrc'.format(noise), folder)
+        elif iter == 'All':
+            path_list = find('*mult0{}_class001.mrc'.format(noise), folder)
+            path_list += find('*it*_class001.mrc', folder)
+        else:
+            path_list = find('*_it{}*_class001.mrc'.format(startingZeros(int(iter))), folder)
+    elif method == 'SGD':
+        folder += 'SGD'
+        if iter == 'Final':
+            path_list = find('*it300_class001.mrc', folder)
+        elif iter == 'All':
+            path_list = find('*it*_class001.mrc', folder)
+    return path_list
+
+
+def getStarFiles(noise, method, iter, eval_data=False):
+    path_list = []
+    folder = DATA_PATH + 'Data_0{}_10k/'.format(noise)
+    if eval_data == True:
+        folder += 'eval/'
+    else:
+        folder += 'train/'
+    if method == 'EM':
+        folder += 'EM'
+        if iter == 'Final':
+             raise Exception
+        elif iter == 'All':
+             raise Exception
+        else:
+            path_list = find('*_it{}*external_reconstruct.star'.format(startingZeros(int(iter))), folder)
+    elif method == 'SGD':
+        raise Exception
+    return path_list
+
 
 def normalize_tf(tensor):
     norms = tf.sqrt(tf.reduce_sum(tf.square(tensor), axis=(1,2,3)))
@@ -30,12 +87,17 @@ def find(pattern, path):
                 result.append(os.path.join(root, name).replace("\\", "/"))
     return result
 
-def locate_gt(pdb_id):
-    l = find('*'+pdb_id+'.mrc', '/local/scratch/public/sl767/MRC_Data/org/')
-    if not len(l)==1:
-        raise ValueError('non-unique pdb id: '+l)
+def locate_gt(path, full_path=True):
+    """filename in path should start with pdb_id"""
+    if full_path:
+        pdb_id = path.split('/')[-1][:4]
     else:
-        return l[0]
+        pdb_id = path
+    L = find('*' + pdb_id + '.mrc', GT_PATH)
+    if not len(L) == 1:
+        raise ValueError('non-unique pdb id: ' + str(L))
+    else:
+        return L[0]
 
 def create_single_folder(folder):
     # creates folder and catches error if it exists already
@@ -44,11 +106,13 @@ def create_single_folder(folder):
             os.makedirs(folder)
         except OSError:
             pass
-        
+
+### TODO np.copy array instead of overwriting
+
 class Rescaler(object):
     def __init__(self, tensor, batch=True):
         tensor.flags.writeable=True
-        self.batch=batch
+        self.batch = batch
         self.scales = []
         if batch:
             for k in range(tensor.shape[0]):
@@ -62,17 +126,17 @@ class Rescaler(object):
         if self.batch:
             assert len(self.scales) == tensor.shape[0]
             for k in range(len(self.scales)):
-                tensor[k,...] = tensor[k,...] / self.scales[k]
+                tensor[k,...] /= self.scales[k]
         else:
-            tensor = tensor*self.scales[0]       
+            tensor *= self.scales[0]       
 
     def scale_up(self, tensor):
         if self.batch:
             assert len(self.scales) == tensor.shape[0]
             for k in range(len(self.scales)):
-                tensor[k,...] = tensor[k,...] * self.scales[k]
+                tensor[k,...] *= self.scales[k]
         else:
-            tensor = tensor*self.scales[0]
+            tensor *= self.scales[0]
 
 
 def get_coordinate_change(power=1.0, cutoff=100.0):

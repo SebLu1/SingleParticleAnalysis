@@ -15,12 +15,13 @@ def data_augmentation_default(gt, adv):
 
 class Denoiser(object):
 
-    def __init__(self, path, data_augmentation=data_augmentation_default, load=False):
+    def __init__(self, path, data_augmentation=data_augmentation_default, solver='Adam', load=False):
 
         self.path = path
         self.network = UNet()
         self.sess = tf.InteractiveSession()
         self.run_options = tf.RunOptions(report_tensor_allocations_upon_oom=True)
+        self.solver = solver
 
         ut.create_single_folder(self.path + '/Data')
         ut.create_single_folder(self.path + '/Logs')
@@ -37,11 +38,15 @@ class Denoiser(object):
 
         # Loss
         self.loss = 0.5 * tf.reduce_sum((self.true_normed - self.denoised) ** 2)
-
+        
         # Optimizer
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
-        self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss, global_step=self.global_step)
-
+        if self.solver == 'Adam':
+            self.optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss, global_step=self.global_step)
+        if self.solver == 'GD':
+            self.optimizer = tf.train.GradientDescentOptimizer(self.learning_rate).minimize(self.loss, global_step=self.global_step)
+        if self.solver == 'Mom':
+            self.optimizer = tf.train.MomentumOptimizer(self.learning_rate).minimize(self.loss, global_step=self.global_step)
         # Logging tools
         summary_list = []
         with tf.name_scope('Network_Optimization'):
@@ -67,7 +72,8 @@ class Denoiser(object):
             self.merged_network = tf.summary.merge(summary_list)
 
         # set up the logger
-        self.writer = tf.summary.FileWriter(self.path + '/Logs/Network_Optimization/')
+        self.writer_train = tf.summary.FileWriter(self.path + '/Logs/Network_Optimization/TrainingData/')
+        self.writer_test = tf.summary.FileWriter(self.path + '/Logs/Network_Optimization/TestData/')
 
         # initialize Variables
         tf.global_variables_initializer().run()
@@ -79,7 +85,7 @@ class Denoiser(object):
     def evaluate(self, data):
         return self.denoised.eval(feed_dict={self.data: data})
 
-    def train(self, groundTruth, noisy, learning_rate=1e-4):
+    def train(self, groundTruth, noisy, learning_rate=None):
         groundTruth = ut.unify_form(groundTruth)
         noisy = ut.unify_form(noisy)
         self.sess.run(self.optimizer,
@@ -88,14 +94,18 @@ class Denoiser(object):
                                  self.learning_rate: learning_rate})
 
     # Input as in 'train', but writes results to tensorboard instead
-    def test(self, groundTruth, noisy):
+    def test(self, groundTruth, noisy, writer='train'):
         groundTruth = ut.unify_form(groundTruth)
         noisy = ut.unify_form(noisy)
         merged, step = self.sess.run([self.merged_network, self.global_step],
                                      feed_dict={self.true: groundTruth,
                                                 self.data: noisy})
-        self.writer.add_summary(merged, global_step=step)
+        if writer == 'train':
+            self.writer_train.add_summary(merged, global_step=step)
 
+        if writer == 'test':
+            self.writer_test.add_summary(merged, global_step=step)            
+            
     def save(self):
         saver = tf.train.Saver()
         saver.save(self.sess, self.path + '/Data/model',

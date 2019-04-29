@@ -22,6 +22,9 @@ def startingZeros(n):
 
 
 def continueEM(x, PDB_ID, em_iter_start, em_iter_finish=None, GPU_ids=''):
+    print('This function needs an update')
+    raise Exception
+    
     if em_iter_finish == None:
         em_iter_finish = em_iter_start + 1
     x = x.squeeze()
