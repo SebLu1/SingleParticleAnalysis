@@ -6,4 +6,4 @@ source activate py3
 echo -e "Please enter the noise level. Currently supported values are 01, 013, 016 and 02 "
 read noise_level
 
-python /mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ClassFiles/run_external_reconstruction.py $noise_level
+python /mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ClassFiles/run_external_reconstruction.py $noise_level '5A0M'
