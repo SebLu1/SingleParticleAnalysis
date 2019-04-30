@@ -11,7 +11,7 @@ POWER = 1.0
 
 REGULARIZATION_TY = 1e6
 SAVES_PATH = '/local/scratch/public/sl767/SPA/Saves/Adversarial_Regulariser/SGD_Trained/phase_augmentation/'
-COMPARISON_PATH = '/local/scratch/public/sl767/MRC_Data/Data_002_10k/ValidateExternal/'
+# COMPARISON_PATH = '/local/scratch/public/sl767/MRC_Data/Data_002_10k/ValidateExternal/'
 
 path = sys.argv
 assert len(path) == 2
@@ -77,9 +77,9 @@ for k in range(70):
 reco_real = irfft(reco)
 
 # write file to external comparison folder for debugging
-with mrcfile.new(COMPARISON_PATH+'Iteration_'+str(iteration)+'.mrc', overwrite=True) as mrc:
-    mrc.set_data(reco_real.astype(np.float32))
-    mrc.voxel_size = 1.5
+# with mrcfile.new(COMPARISON_PATH+'Iteration_'+str(iteration)+'.mrc', overwrite=True) as mrc:
+#     mrc.set_data(reco_real.astype(np.float32))
+#     mrc.voxel_size = 1.5
 
 print('-------')
 print(target_path, file['external_reconstruct_general']['rlnExtReconsResult'])
