@@ -7,7 +7,7 @@ INTERPOLATION_INTERVAL = [0, 1]
 
 
 def interpolation(gt, adv):
-    batch_size = gt.shape[0]
+    batch_size = tf.shape(gt)[0]
     eps = tf.random_uniform(shape=(batch_size, 1, 1, 1, 1), minval=INTERPOLATION_INTERVAL[0],
                             maxval=INTERPOLATION_INTERVAL[1])
     adv_inter = tf.multiply(eps, gt) + tf.multiply(tf.ones(shape=(batch_size,1,1,1,1))-eps, adv)
@@ -18,7 +18,7 @@ PHASE_SHIFT_INTERVAL = [0, 0.5]
 
 
 def phase_augmentation(gt, adv):
-    batch_size = gt.shape[0]
+    batch_size = tf.shape(gt)[0]
     y = tf.spectral.rfft3d(gt[...,0])
     phase = 2*np.pi*tf.random_uniform(shape=tf.shape(y), minval=0, maxval=1)
     com_phase = tf.exp(1j*tf.cast(phase, tf.complex64))
@@ -35,7 +35,7 @@ TRANSLATION_MAX = 0.1
 
 
 def rotation_translation(gt, adv):
-    batch_size = gt.shape[0]
+    batch_size = tf.shape(gt)[0]
     basis_exp = tf.random_normal(shape=[batch_size, 3, 3], stddev=ROTATION_STD)
     skew_exp = basis_exp - tf.transpose(basis_exp, perm=[0, 2, 1])
     rotation = tf.linalg.expm(skew_exp)
