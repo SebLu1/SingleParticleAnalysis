@@ -1,0 +1,9 @@
+#!/bin/bash
+
+export RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE="/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_AR.py"
+source activate py3
+
+echo -e "Please enter the noise level: "
+read noise_level
+
+python $noise_level

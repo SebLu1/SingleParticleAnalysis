@@ -1,11 +1,11 @@
-# Script that calls Relion for data generation
 import subprocess as sp
-import os
-import fnmatch
+from ClassFiles.ut import create_single_folder
 import sys
 
-GPU_ids = ''
-NUM_MPI = 3 #  At least 3 if --split_random_halves is used
+arguments = sys.argv
+
+noise_level = sys.argv[1]
+
 
 base_path = '/local/scratch/public/sl767/MRC_Data'
 
@@ -16,16 +16,16 @@ def runCommand(cmd_string):
 RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE = '/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_AR.py'
 # runCommand('export RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE="{}"'.format(RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE))
 
+out_path = base_path + '/Data_0{}_10k'.format(noise_level)
+out_new_path = base_path + '/Data_0{}_10k/TestAR'.format(noise_level)
 
-train_path = base_path + '/org/training'
-
-noise_level = ['02'] #  Right now this has to be a list with a single element
-out_path = base_path + '/Data_0{}_10k'.format(noise_level[0])
-out_new_path = base_path + '/Data_0{}_10k/TestAR'.format(noise_level[0])
-#print(out_path)
+create_single_folder(out_path)
+create_single_folder(out_new_path)
 
 PDB_ID = ['5A0M']
 MPI_MODE = 'mpirun'
+GPU_ids = ''
+NUM_MPI = 3 #  At least 3 if --split_random_halves is used
 
 for p in PDB_ID:
     for n in noise_level:
