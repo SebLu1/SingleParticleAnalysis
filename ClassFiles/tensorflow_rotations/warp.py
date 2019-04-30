@@ -76,9 +76,9 @@ def _repeat(base_indices, n_repeats):
 
 def _interpolate2d(imgs, x, y):
     n_batch = tf.shape(imgs)[0]
-    xlen = tf.shape(imgs)[1]
-    ylen = tf.shape(imgs)[2]
-    n_channel = tf.shape(imgs)[3]
+    xlen = int(imgs.shape[1])
+    ylen = int(imgs.shape[2])
+    n_channel = int(imgs.shape[3])
 
     x = tf.to_float(x)
     y = tf.to_float(y)
@@ -136,10 +136,10 @@ def _interpolate2d(imgs, x, y):
 
 def _interpolate3d(imgs, x, y, z):
     n_batch = tf.shape(imgs)[0]
-    xlen = tf.shape(imgs)[1]
-    ylen = tf.shape(imgs)[2]
-    zlen = tf.shape(imgs)[3]
-    n_channel = tf.shape(imgs)[4]
+    xlen = int(imgs.shape[1])
+    ylen = int(imgs.shape[2])
+    zlen = int(imgs.shape[3])
+    n_channel = int(imgs.shape[4])
 
     x = tf.to_float(x)
     y = tf.to_float(y)

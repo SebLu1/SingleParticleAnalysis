@@ -58,9 +58,9 @@ def batch_affine_warp3d(imgs, theta):
         [n_batch, xlen, ylen, zlen, n_channel]
     """
     n_batch = tf.shape(imgs)[0]
-    xlen = tf.shape(imgs)[1]
-    ylen = tf.shape(imgs)[2]
-    zlen = tf.shape(imgs)[3]
+    xlen = int(imgs.shape[1])
+    ylen = int(imgs.shape[2])
+    zlen = int(imgs.shape[3])
     theta = tf.reshape(theta, [-1, 3, 4])
     matrix = tf.slice(theta, [0, 0, 0], [-1, -1, 3])
     t = tf.slice(theta, [0, 0, 3], [-1, -1, -1])
