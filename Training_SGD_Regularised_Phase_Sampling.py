@@ -1,6 +1,6 @@
 import mrcfile
 import numpy as np
-from ClassFiles.Framework_future import AdversarialRegulariser
+from ClassFiles.AdversarialRegularizer import AdversarialRegulariser
 from ClassFiles.ut import find
 import random
 import tensorflow as tf
