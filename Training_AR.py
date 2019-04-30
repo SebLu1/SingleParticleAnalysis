@@ -20,7 +20,7 @@ regularizer = AdversarialRegulariser(saves_path, data_augmentation)
 
 
 def evaluate():
-    gt, adv = get_batch(eval_data=True)
+    gt, adv = get_batch(eval_data=True, noise_levels=['01', '016'], methods=['EM', 'SGD'])
     regularizer.test(groundTruth=gt, adversarial=adv, fourier_data=False)
 
 

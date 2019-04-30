@@ -44,12 +44,12 @@ def get_image(noise_level, methode, eval_data):
     return gt, adv
 
 
-def get_batch(batch_size=BATCH_SIZE, eval_data=False):
+def get_batch(batch_size=BATCH_SIZE, noise_levels=NOISE_LEVELS, methods=METHODS, eval_data=False):
     true = np.zeros(shape=(batch_size, 96,96,96))
     adv = np.zeros(shape=(batch_size, 96,96,96))
     for k in range(BATCH_SIZE):
-        nl = random.choice(NOISE_LEVELS)
-        methode = random.choice(METHODS)
+        nl = random.choice(noise_levels)
+        methode = random.choice(methods)
         gt, adver = get_image(nl, methode, eval_data)
         true[k, ...] = gt
         adv[k, ...] = adver
