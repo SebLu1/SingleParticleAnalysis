@@ -12,6 +12,10 @@ GT_PATH = BASE_PATH + 'org/'
 def l2(vector):
     return np.sqrt(np.sum(np.square(np.abs(vector))))
 
+def l2_tf(tensor):
+    return tf.sqrt(tf.reduce_sum(tf.square(tf.abs(tensor)), axis = (1,2,3,4)))
+
+
 # def normalize(vector):
 #     if not vector.shape[0] == 96:
 #         for k in range(vector.shape[0]):
@@ -138,7 +142,7 @@ class Rescaler(object):
         else:
             tensor *= self.scales[0]
 
-
+# Cut Fourier masks for negative s
 def get_coordinate_change(power=1.0, cutoff=100.0):
     print(cutoff)
     print(power)
@@ -153,6 +157,37 @@ def get_coordinate_change(power=1.0, cutoff=100.0):
     R = np.minimum(R, cutoff * np.min(R))
     R = R / np.max(R)
     return R
+
+# Cut Fourier masks for positive s
+def sobolev_mask(power=1.0, cutoff=100.0):    
+    print(cutoff)
+    print(power)
+    X, Y, Z = np.meshgrid(np.linspace(-1, 1, 96),
+                          np.linspace(-1, 1, 96),
+                          np.linspace(-1, 1, 96))
+
+    R = np.sqrt(X ** 2 + Y ** 2 + Z ** 2)
+    R = np.fft.fftshift(R)
+
+    R = R ** power
+    R = np.maximum(R, np.max(R)/cutoff)
+    R = R / np.min(R)
+    return R
+
+def sobolev_norm(tensor, s=1.0):
+    mask = tf.constant(sobolev_mask(), dtype=tf.complex64)
+    s = tf.shape(tensor)
+    scaling = tf.sqrt(tf.cast(s[1]*s[2]*s[3], dtype=tf.complex64))
+
+    # move channels in as fourier transform is taken over the three innermost dimensions
+    tensor = tf.transpose(tensor, [0, 4, 1, 2 ,3])
+    fourier= tf.spectral.fft3d(tf.cast(tensor, dtype=tf.complex64))/scaling
+
+    masked = tf.multiply(fourier, mask)
+    
+    # Use parceval's theorem plus our isometric scaling of the FT here
+    return l2_tf(masked)
+
 
 
 IMAGE_SIZE = [96, 96, 96]

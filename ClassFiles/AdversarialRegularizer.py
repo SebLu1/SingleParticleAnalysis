@@ -2,8 +2,8 @@ import os
 import tensorflow as tf
 from ClassFiles.networks import ResNetClassifier
 import ClassFiles.ut as ut
-from ClassFiles.ut import fftshift_tf
-from ClassFiles.ut import normalize_tf
+from ClassFiles.ut import fftshift_tf, normalize_tf, l2_tf, sobolev_norm
+
 
 IMAGE_SIZE = (None, 96, 96, 96, 1)
 FOURIER_SIZE = (None, 96, 96, 49, 1)
@@ -14,9 +14,13 @@ def data_augmentation_default(gt, adv):
     return gt, adv
 
 class AdversarialRegulariser(object):
-
     # sets up the network architecture
-    def __init__(self, path, data_augmentation=data_augmentation_default):
+    def __init__(self, path, data_augmentation=data_augmentation_default, s=0.0):
+        
+        if s == 0.0:
+            norm = l2_tf
+        else:
+            norm = sobolev_norm
 
         self.path =path
         self.network = ResNetClassifier()
@@ -27,7 +31,6 @@ class AdversarialRegulariser(object):
         ut.create_single_folder(self.path + '/Logs')
 
         ### Training the regulariser ###
-
         # placeholders
         self.fourier_data = tf.placeholder(shape=FOURIER_SIZE, dtype=tf.complex64)
         self.true = tf.placeholder(shape=IMAGE_SIZE, dtype=tf.float32)
@@ -61,7 +64,7 @@ class AdversarialRegulariser(object):
         self.gradient_was = tf.gradients(self.inter_was, self.inter)[0]
 
         # take the L2 norm of that derivative
-        self.norm_gradient = tf.sqrt(tf.reduce_sum(tf.square(self.gradient_was), axis=(1, 2, 3)))
+        self.norm_gradient = norm(self.gradient_was)
         self.regulariser_was = tf.reduce_mean(tf.square(tf.nn.relu(self.norm_gradient - 1)))
 
         # Overall Net Training loss
