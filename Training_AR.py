@@ -7,6 +7,7 @@ LEARNING_RATE = 0.00005
 LOOPS = 5
 STEPS = 1000
 
+S = 1.0
 
 def data_augmentation(gt, adv):
     _, adv1 = interpolation(gt, adv)
@@ -16,7 +17,7 @@ def data_augmentation(gt, adv):
 
 
 saves_path = '/local/scratch/public/sl767/SPA/Saves/Adversarial_Regulariser/AllData/AllAugmentation/'
-regularizer = AdversarialRegulariser(saves_path, data_augmentation)
+regularizer = AdversarialRegulariser(saves_path, data_augmentation, s=S)
 
 
 def evaluate():

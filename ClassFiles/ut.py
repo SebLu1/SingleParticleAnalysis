@@ -175,9 +175,9 @@ def sobolev_mask(power=1.0, cutoff=100.0):
     return R
 
 def sobolev_norm(tensor, s=1.0):
-    mask = tf.constant(sobolev_mask(), dtype=tf.complex64)
-    s = tf.shape(tensor)
-    scaling = tf.sqrt(tf.cast(s[1]*s[2]*s[3], dtype=tf.complex64))
+    mask = tf.constant(sobolev_mask(power=s), dtype=tf.complex64)
+    sh = tf.shape(tensor)
+    scaling = tf.sqrt(tf.cast(sh[1]*sh[2]*sh[3], dtype=tf.complex64))
 
     # move channels in as fourier transform is taken over the three innermost dimensions
     tensor = tf.transpose(tensor, [0, 4, 1, 2 ,3])
