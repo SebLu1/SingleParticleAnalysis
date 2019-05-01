@@ -111,11 +111,8 @@ def create_single_folder(folder):
         except OSError:
             pass
 
-### TODO np.copy array instead of overwriting
-
 class Rescaler(object):
     def __init__(self, tensor, batch=True):
-        tensor.flags.writeable=True
         self.batch = batch
         self.scales = []
         if batch:

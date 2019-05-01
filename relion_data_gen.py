@@ -14,12 +14,12 @@ train_folder = SCRIPT_ARGS[2]
 GPU_ids = ''# '0:1' 
 NUM_MPI = 3 #  At least 3 if --split_random_halves is used
 
-mk_dirs = True
-create_projs = True
-run_SGD = True
+mk_dirs = False
+create_projs = False
+run_SGD = False
 run_EM = True
 
-EVAL_DATA = False
+EVAL_DATA = True
 
 SGD_ini_method = 'lowpass'
 SGD_lowpass_frec = 30
@@ -73,7 +73,7 @@ train_path = base_path + '/org/training'
 test_path = base_path + '/org/eval'
 
 #train_path = test_path #  Hack for now
-noise_level = ['012'] #  Right now this has to be a list with a single element
+noise_level = ['01'] #  Right now this has to be a list with a single element
 out_path = base_path + '/Data/Data_0{}_10k'.format(noise_level[0])
 
 if EVAL_DATA:
@@ -85,7 +85,7 @@ PDB_ID = find_PDB_ID('*.mrc', '{TrP}/{TrF}'.format(TrP=train_path, TrF=train_fol
 #PDB_ID = find_PDB_ID('*.mrc', '{TP}/9'.format(TP=train_path))
 PDB_ID = PDB_ID[START_MOL: END_MOL]
 #PDB_ID = PDB_ID[:1] # To see that it works
-#PDB_ID = ['5A0M']
+PDB_ID = ['5A0M']
 
 if len(SCRIPT_ARGS) == 4:
     PDB_ID = [SCRIPT_ARGS[3]] 
@@ -193,12 +193,14 @@ if run_EM:
             refine_cmd += ' --norm --scale'
             refine_cmd += ' --gpu "{GPU_ids}"'
             if not EVAL_DATA:
-                refine_cmd += ' --external_reconstruct' #  No need to use this when generating eval data
+                pass
+            refine_cmd += ' --external_reconstruct' #  No need to use this when generating eval data
 #--maximum_angular_sampling 1.8'
             refine_cmd += ' --j 6' # Number of threads to run in parallel (only useful on multi-core machines)
             refine_cmd += ' --pool 30' # Number of images to pool for each thread task
             refine_cmd += ' --dont_combine_weights_via_disc'  # Send the large arrays of summed weights through the MPI network,
                                                               # instead of writing large files to disc
+            refine_cmd += ' --auto_iter_max 1'    
 #            refine_cmd += ' --iter 30'
 #            refine_cmd += ' --preread_images' #  Use this to let the master process read all particles into memory.
                                                #  Be careful you have enough RAM for large data sets!
