@@ -6,6 +6,7 @@ arguments = sys.argv
 
 n = sys.argv[1]
 p = sys.argv[2]
+method = sys.argv[3]
 
 print('Noise Level: ' + str(n))
 
@@ -15,7 +16,7 @@ def runCommand(cmd_string):
     sp.call(cmd_string.split(' '))
 
 out_path = base_path + '/Data_0{}_10k/eval'.format(n)
-out_new_path = base_path + '/Data_0{}_10k/eval/TestAR/{}'.format(n,p)
+out_new_path = base_path + '/Data_0{}_10k/eval/{}/{}'.format(n,method,p)
 
 create_single_folder(out_new_path)
 

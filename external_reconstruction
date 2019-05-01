@@ -1,9 +1,19 @@
 #!/bin/bash
 
-export RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE="/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_AR.py"
-source activate py3
+echo -e "Please choose the reconstruction method. Currently supported are AR and RED"
+read method
+
+if ["$method" == "AR"]; then
+    method_path = "/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_AR.py"
+    echo -e "Adversarial Regularizer reconstruction chosen"
+else
+    method_path = "/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_RED.py"
+    echo -e "RED reconstruction chosen"
+fi
+
+export RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE=$method_path
 
 echo -e "Please enter the noise level. Currently supported values are 01, 013, 016 and 02 "
 read noise_level
 
-python /mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ClassFiles/run_external_reconstruction.py $noise_level '5A0M'
+python /mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ClassFiles/run_external_reconstruction.py $noise_level '5A0M' $method
