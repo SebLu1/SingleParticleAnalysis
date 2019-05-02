@@ -108,7 +108,7 @@ def resblock(x, filters, he_init=False, factor=2.0):
         return skip + update
 
 
-class ResNetClassifier(network):
+class ResNetClassifierL2(network):
     def net(self, x_in):
         with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
             with tf.name_scope('pre_process'):
@@ -139,6 +139,36 @@ class ResNetClassifier(network):
                 
             with tf.name_scope('return'):
                 return base_case + flat
+
+
+class ResNetClassifier(network):
+    def net(self, x_in):
+        with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
+            with tf.name_scope('pre_process'):
+                x0 = apply_conv(x_in, filters=16, kernel_size=3)
+
+            with tf.name_scope('x1'):
+                x1 = resblock(x0, 16)  # 96
+
+            with tf.name_scope('x2'):
+                x2 = resblock(meanpool(x1), filters=32)  # 48
+
+            with tf.name_scope('x3'):
+                x3 = resblock(meanpool(x2), filters=64)  # 24
+
+            with tf.name_scope('x4'):
+                x4 = resblock(meanpool(x3), filters=128)  # 12
+
+            with tf.name_scope('x5'):
+                x5 = resblock(meanpool(x4), filters=128)  # 6
+
+            with tf.name_scope('flat'):
+                flat = tf.contrib.layers.flatten(x5)
+                flat = tf.layers.dense(flat, 128, activation=activation)
+                flat = tf.layers.dense(flat, 1)
+
+            with tf.name_scope('return'):
+                return flat
 
 
 class UNet(network):

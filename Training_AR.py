@@ -7,7 +7,15 @@ LEARNING_RATE = 0.00005
 LOOPS = 5
 STEPS = 1000
 
+
+# Parameter choices. Heuristic in the BWGAN paper: Choose GAMMA as average dual norm of clean image
+# LMB should be bigger than product of norm times dual norm.
+
+# For s=0.0, this implies GAMMA =1.0
+# For s=1.0, have GAMMA = 10.0 as realisitc value
 S = 1.0
+LMB = 10.0
+GAMMA = 10.0
 
 def data_augmentation(gt, adv):
     _, adv1 = interpolation(gt, adv)
@@ -17,7 +25,7 @@ def data_augmentation(gt, adv):
 
 
 saves_path = '/local/scratch/public/sl767/SPA/Saves/Adversarial_Regulariser/AllData/AllAugmentation/'
-regularizer = AdversarialRegulariser(saves_path, data_augmentation, s=S)
+regularizer = AdversarialRegulariser(saves_path, data_augmentation, s=S, lmb=LMB, gamma=GAMMA)
 
 
 def evaluate():

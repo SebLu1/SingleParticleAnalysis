@@ -8,14 +8,13 @@ from ClassFiles.ut import fftshift_tf, normalize_tf, l2_tf, sobolev_norm
 IMAGE_SIZE = (None, 96, 96, 96, 1)
 FOURIER_SIZE = (None, 96, 96, 49, 1)
 # Weight on gradient regularization
-LMB = 20
 
 def data_augmentation_default(gt, adv):
     return gt, adv
 
 class AdversarialRegulariser(object):
     # sets up the network architecture
-    def __init__(self, path, data_augmentation=data_augmentation_default, s=0.0):
+    def __init__(self, path, data_augmentation=data_augmentation_default, s=0.0, gamma=1.0, lmb=10.0):
         
         if s == 0.0:
             norm = l2_tf
@@ -65,10 +64,10 @@ class AdversarialRegulariser(object):
 
         # take the L2 norm of that derivative
         self.norm_gradient = norm(self.gradient_was)
-        self.regulariser_was = tf.reduce_mean(tf.square(tf.nn.relu(self.norm_gradient - 1)))
+        self.regulariser_was = tf.reduce_mean(tf.square(self.norm_gradient/gamma - 1))
 
         # Overall Net Training loss
-        self.loss_was = self.wasserstein_loss + LMB * self.regulariser_was
+        self.loss_was = self.wasserstein_loss + lmb * self.regulariser_was
 
         # optimizer for Wasserstein network
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
