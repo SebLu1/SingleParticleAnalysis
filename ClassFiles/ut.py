@@ -171,19 +171,24 @@ def sobolev_mask(power=1.0, cutoff=100.0):
     R = R / np.min(R)
     return R
 
-def sobolev_norm(tensor, s=1.0):
-    mask = tf.constant(sobolev_mask(power=s), dtype=tf.complex64)
-    sh = tf.shape(tensor)
-    scaling = tf.sqrt(tf.cast(sh[1]*sh[2]*sh[3], dtype=tf.complex64))
 
-    # move channels in as fourier transform is taken over the three innermost dimensions
-    tensor = tf.transpose(tensor, [0, 4, 1, 2 ,3])
-    fourier= tf.spectral.fft3d(tf.cast(tensor, dtype=tf.complex64))/scaling
+def sobolev_norm(tensor, s=1.0, cutoff=20.0):
+    if s == 0.0:
+        return l2_tf(tensor)
 
-    masked = tf.multiply(fourier, mask)
-    
-    # Use parceval's theorem plus our isometric scaling of the FT here
-    return l2_tf(masked)
+    else:
+        mask = tf.constant(sobolev_mask(power=s, cutoff=cutoff), dtype=tf.complex64)
+        sh = tf.shape(tensor)
+        scaling = tf.sqrt(tf.cast(sh[1]*sh[2]*sh[3], dtype=tf.complex64))
+
+        # move channels in as fourier transform is taken over the three innermost dimensions
+        tensor = tf.transpose(tensor, [0, 4, 1, 2 ,3])
+        fourier= tf.spectral.fft3d(tf.cast(tensor, dtype=tf.complex64))/scaling
+
+        masked = tf.multiply(fourier, mask)
+
+        # Use parceval's theorem plus our isometric scaling of the FT here
+        return l2_tf(masked)
 
 
 

@@ -14,14 +14,9 @@ def data_augmentation_default(gt, adv):
 
 class AdversarialRegulariser(object):
     # sets up the network architecture
-    def __init__(self, path, data_augmentation=data_augmentation_default, s=0.0, gamma=1.0, lmb=10.0):
-        
-        if s == 0.0:
-            norm = l2_tf
-        else:
-            norm = sobolev_norm
+    def __init__(self, path, data_augmentation=data_augmentation_default, s=0.0, cutoff=20.0, gamma=1.0, lmb=10.0):
 
-        self.path =path
+        self.path = path
         self.network = ResNetClassifier()
         self.sess = tf.InteractiveSession()
         self.run_options = tf.RunOptions(report_tensor_allocations_upon_oom = True)
@@ -63,7 +58,7 @@ class AdversarialRegulariser(object):
         self.gradient_was = tf.gradients(self.inter_was, self.inter)[0]
 
         # take the L2 norm of that derivative
-        self.norm_gradient = norm(self.gradient_was)
+        self.norm_gradient = sobolev_norm(self.gradient_was, s=s, cutoff=cutoff)
         self.regulariser_was = tf.reduce_mean(tf.square(self.norm_gradient/gamma - 1))
 
         # Overall Net Training loss

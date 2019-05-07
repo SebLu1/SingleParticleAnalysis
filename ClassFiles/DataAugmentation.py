@@ -3,7 +3,7 @@ import numpy as np
 from ClassFiles import tensorflow_rotations
 
 
-INTERPOLATION_INTERVAL = [0, 1]
+INTERPOLATION_INTERVAL = [0, 0.7]
 
 
 def interpolation(gt, adv):
@@ -30,11 +30,11 @@ def phase_augmentation(gt, adv):
     return gt, adv_new
 
 
-ROTATION_STD = 10
-TRANSLATION_MAX = 0.1
+ROTATION_STD = 20
+TRANSLATION_MAX = 0.2
 
 
-def rotation_translation(gt, adv):
+def rotation_translation(gt, adv, translation_max = TRANSLATION_MAX):
     batch_size = tf.shape(gt)[0]
     basis_exp = tf.random_normal(shape=[batch_size, 3, 3], stddev=ROTATION_STD)
     skew_exp = basis_exp - tf.transpose(basis_exp, perm=[0, 2, 1])
@@ -47,3 +47,7 @@ def rotation_translation(gt, adv):
     rot_adv = tensorflow_rotations.rot3d(adv, theta)
 
     return rot_gt, rot_adv
+
+
+def positivity(gt, adv):
+    return np.maximum(0, gt), np.maximum(0, adv)
