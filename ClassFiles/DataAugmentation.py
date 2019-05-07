@@ -40,7 +40,7 @@ def rotation_translation(gt, adv, translation_max = TRANSLATION_MAX):
     skew_exp = basis_exp - tf.transpose(basis_exp, perm=[0, 2, 1])
     rotation = tf.linalg.expm(skew_exp)
 
-    translation = tf.random_uniform(shape=[batch_size, 3, 1], minval=-TRANSLATION_MAX, maxval=TRANSLATION_MAX)
+    translation = tf.random_uniform(shape=[batch_size, 3, 1], minval=-translation_max, maxval=translation_max)
     theta = tf.concat([rotation, translation], axis=-1)
 
     rot_gt = tensorflow_rotations.rot3d(gt, theta)
