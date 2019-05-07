@@ -4,7 +4,7 @@ from ClassFiles.DataGeneration import get_batch
 
 BATCH_SIZE = 1
 LEARNING_RATE = 0.00005
-LOOPS = 5
+LOOPS = 2
 STEPS = 5000
 
 
