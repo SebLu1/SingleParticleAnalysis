@@ -50,4 +50,4 @@ def rotation_translation(gt, adv, translation_max = TRANSLATION_MAX):
 
 
 def positivity(gt, adv):
-    return tf.maximum(0, gt), tf.maximum(0, adv)
+    return tf.maximum(0.0, gt), tf.maximum(0.0, adv)
