@@ -24,8 +24,10 @@ for det in l:
         iteration = det[2:5]
         
 print('Iteration: {}'.format(iteration))
-
-ADVERSARIAL_REGULARIZATION = 0.075
+if int(iteration) <= 5:
+    ADVERSARIAL_REGULARIZATION = 0.3
+else:
+    ADVERSARIAL_REGULARIZATION = 0.5
     
 print('Regularization: '+str(ADVERSARIAL_REGULARIZATION))
 
@@ -39,32 +41,36 @@ with mrcfile.open(file['external_reconstruct_general']['rlnExtReconsWeight']) as
 target_path = file['external_reconstruct_general']['rlnExtReconsResult']
 complex_data = data_real + 1j * data_im
 
-regularizer = AdversarialRegulariser(SAVES_PATH)
+# set_off = REGULARIZATION_TY*kernel.max()
+tikhonov_kernel = kernel+REGULARIZATION_TY
 
-tikhonov_kernel = kernel + 1e6
 precondioner = np.abs(np.divide(1, tikhonov_kernel))
 precondioner /= precondioner.max()
 tikhonov = np.divide(complex_data, tikhonov_kernel)
 reco = np.copy(tikhonov)
 
-# The scales produce gradients of order 1
-ADVERSARIAL_SCALE=(96**(-0.5))
-DATA_SCALE=1/(10*96**3)
+regularizer = AdversarialRegulariser(SAVES_PATH)
 
-IMAGING_SCALE=96
+coordinate_change = get_coordinate_change(power=POWER, cutoff=1000.0)
+
+# The scales produce gradients of order 1
+ADVERSARIAL_SCALE = (96 ** (-0.5))
+DATA_SCALE = 1 / (10 * 96 ** 3)
+
+IMAGING_SCALE = 96
 
 for k in range(70):
-    STEP_SIZE=1.0 * 1 / np.sqrt(1 + k / 20)
-    
+    STEP_SIZE = 2.0 * 1 / np.sqrt(1 + k / 20)
+
     gradient = regularizer.evaluate(reco)
-    g1 = REG * gradient * ADVERSARIAL_SCALE
-#     print(l2(gradient))
-    g2 = DATA_SCALE*(np.multiply(reco, tikhonov_kernel) - complex_data)
-    
+    g1 = ADVERSARIAL_REGULARIZATION * coordinate_change * gradient * ADVERSARIAL_SCALE
+    #     print(l2(gradient))
+    g2 = DATA_SCALE * (np.multiply(reco, tikhonov_kernel) - complex_data)
+
     g = g1 + g2
-#     reco = reco - STEP_SIZE * 0.02 * g
+    #     reco = reco - STEP_SIZE * 0.02 * g
     reco = reco - STEP_SIZE * precondioner * g
-    
+
     reco = np.fft.rfftn(np.maximum(0, np.fft.irfftn(reco)))
 
 # write final reconstruction to file
