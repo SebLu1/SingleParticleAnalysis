@@ -7,10 +7,10 @@ from ClassFiles.AdversarialRegularizer import AdversarialRegulariser
 from ClassFiles.ut import irfft, get_coordinate_change
 import sys
 
-POWER = 1.0
-
 REGULARIZATION_TY = 1e6
-SAVES_PATH = '/local/scratch/public/sl767/SPA/Saves/Adversarial_Regulariser/SGD_Trained/phase_augmentation/'
+ADVERSARIAL_REGULARIZATION = 0.0075
+
+SAVES_PATH = '/local/scratch/public/sl767/SPA/Saves/Adversarial_Regulariser/Cutoff_20/Translation_Augmentation'
 # COMPARISON_PATH = '/local/scratch/public/sl767/MRC_Data/Data_002_10k/ValidateExternal/'
 
 path = sys.argv
@@ -24,8 +24,6 @@ for det in l:
         iteration = det[2:5]
         
 print('Iteration: {}'.format(iteration))
-
-ADVERSARIAL_REGULARIZATION = 0.075
     
 print('Regularization: '+str(ADVERSARIAL_REGULARIZATION))
 
@@ -41,7 +39,7 @@ complex_data = data_real + 1j * data_im
 
 regularizer = AdversarialRegulariser(SAVES_PATH)
 
-tikhonov_kernel = kernel + 1e6
+tikhonov_kernel = kernel + REGULARIZATION_TY
 precondioner = np.abs(np.divide(1, tikhonov_kernel))
 precondioner /= precondioner.max()
 tikhonov = np.divide(complex_data, tikhonov_kernel)
@@ -57,7 +55,7 @@ for k in range(70):
     STEP_SIZE=1.0 * 1 / np.sqrt(1 + k / 20)
     
     gradient = regularizer.evaluate(reco)
-    g1 = REG * gradient * ADVERSARIAL_SCALE
+    g1 = ADVERSARIAL_REGULARIZATION * gradient * ADVERSARIAL_SCALE
 #     print(l2(gradient))
     g2 = DATA_SCALE*(np.multiply(reco, tikhonov_kernel) - complex_data)
     
