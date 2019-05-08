@@ -3,7 +3,7 @@ import numpy as np
 from ClassFiles import tensorflow_rotations
 
 
-INTERPOLATION_INTERVAL = [0, 0.7]
+INTERPOLATION_INTERVAL = [0, 0.9]
 
 
 def interpolation(gt, adv):

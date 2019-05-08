@@ -32,13 +32,13 @@ regularizer = AdversarialRegulariser(saves_path, data_augmentation, s=S, cutoff=
 
 def evaluate():
     gt, adv = get_batch(eval_data=True, noise_levels=['01', '016'], methods=['EM', 'SGD'])
-    regularizer.test(groundTruth=gt, adversarial=adv, fourier_data=False)
+    regularizer.test(groundTruth=gt, adversarial=adv)
 
 
 def train(steps):
     for k in range(steps):
         gt, adv = get_batch(eval_data=False)
-        regularizer.train(groundTruth=gt, adversarial=adv, learning_rate=LEARNING_RATE, fourier_data=False)
+        regularizer.train(groundTruth=gt, adversarial=adv, learning_rate=LEARNING_RATE)
         if k%50==0:
             evaluate()
     regularizer.save()

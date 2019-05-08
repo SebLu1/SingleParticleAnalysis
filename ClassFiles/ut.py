@@ -83,6 +83,13 @@ def normalize_tf(tensor):
     norms_exp = tf.expand_dims(tf.expand_dims(tf.expand_dims(norms, axis=1), axis=1), axis=1)
     return tf.div(tensor, norms_exp)
 
+
+def normalize_np(tensor):
+    norms = np.sqrt(np.sum(np.square(tensor), axis=(1,2,3)))
+    norms_exp = np.expand_dims(np.expand_dims(np.expand_dims(norms, axis=1), axis=1), axis=1)
+    return np.divide(tensor, norms_exp)
+
+
 def find(pattern, path):
     result = []
     for root, dirs, files in os.walk(path):
