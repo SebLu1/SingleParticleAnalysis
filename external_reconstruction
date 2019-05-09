@@ -14,7 +14,7 @@ fi
 export RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE=$method_path
 echo -e $RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE
 
-echo -e "Please enter the noise level. Currently supported values are 01, 013, 016 and 02 "
+echo -e "Please enter the noise level. Currently supported values are 01, 012, 016 and 02 "
 read noise_level
 
 if [ "$method" == "AR" ]; then
