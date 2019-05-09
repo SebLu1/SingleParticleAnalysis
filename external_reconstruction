@@ -17,7 +17,7 @@ echo -e $RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE
 echo -e "Please enter the noise level. Currently supported values are 01, 013, 016 and 02 "
 read noise_level
 
-if ["$method" == "AR"]; then
+if [ "$method" == "AR" ]; then
     echo -e "Please enter the regularization parameter"
     read reg_par
     export RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION=$reg_par
