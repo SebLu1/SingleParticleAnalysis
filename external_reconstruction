@@ -17,4 +17,9 @@ echo -e $RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE
 echo -e "Please enter the noise level. Currently supported values are 01, 013, 016 and 02 "
 read noise_level
 
-python /mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ClassFiles/run_external_reconstruction.py $noise_level '5A0M' $method
+if ["$method" == "AR"]; then
+    echo -e "Please enter the regularization parameter"
+    read reg_par
+    export RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION=$reg_par
+
+python /mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ClassFiles/run_external_reconstruction.py $noise_level '5A0M' $method $reg_par

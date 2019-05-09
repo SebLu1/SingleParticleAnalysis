@@ -1,12 +1,16 @@
 import subprocess as sp
 from ut import create_single_folder
 import sys
+import os
 
 arguments = sys.argv
 
 n = sys.argv[1]
 p = sys.argv[2]
 method = sys.argv[3]
+
+ADVERSARIAL_REGULARIZATION = os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"][1:-1]
+print(ADVERSARIAL_REGULARIZATION)
 
 print('Noise Level: ' + str(n))
 

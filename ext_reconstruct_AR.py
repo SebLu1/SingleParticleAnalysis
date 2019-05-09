@@ -4,14 +4,17 @@ import numpy as np
 import mrcfile
 from ClassFiles.relion_fixed_it import load_star
 from ClassFiles.AdversarialRegularizer import AdversarialRegulariser
-from ClassFiles.ut import irfft, get_coordinate_change
+from ClassFiles.ut import irfft
 import sys
+import os
+
+ADVERSARIAL_REGULARIZATION = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"])
+print(ADVERSARIAL_REGULARIZATION)
 
 REGULARIZATION_TY = 1e6
-ADVERSARIAL_REGULARIZATION = 0.0075
+# ADVERSARIAL_REGULARIZATION = 0.0075
 
 SAVES_PATH = '/local/scratch/public/sl767/SPA/Saves/Adversarial_Regulariser/Cutoff_20/Translation_Augmentation'
-# COMPARISON_PATH = '/local/scratch/public/sl767/MRC_Data/Data_002_10k/ValidateExternal/'
 
 path = sys.argv
 assert len(path) == 2
@@ -68,10 +71,6 @@ for k in range(70):
 # write final reconstruction to file
 reco_real = irfft(reco)
 
-# write file to external comparison folder for debugging
-# with mrcfile.new(COMPARISON_PATH+'Iteration_'+str(iteration)+'.mrc', overwrite=True) as mrc:
-#     mrc.set_data(reco_real.astype(np.float32))
-#     mrc.voxel_size = 1.5
 
 print('-------')
 print(target_path, file['external_reconstruct_general']['rlnExtReconsResult'])
