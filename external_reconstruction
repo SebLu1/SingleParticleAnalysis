@@ -3,15 +3,16 @@
 echo -e "Please choose the reconstruction method. Currently supported are AR and RED"
 read method
 
-if ["$method" == "AR"]; then
-    method_path = "/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_AR.py"
+if [ "$method" == "AR" ]; then
+    method_path="/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_AR.py"
     echo -e "Adversarial Regularizer reconstruction chosen"
 else
-    method_path = "/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_RED.py"
+    method_path="/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_RED.py"
     echo -e "RED reconstruction chosen"
 fi
 
 export RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE=$method_path
+echo -e $RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE
 
 echo -e "Please enter the noise level. Currently supported values are 01, 013, 016 and 02 "
 read noise_level
