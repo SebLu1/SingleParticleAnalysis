@@ -9,7 +9,7 @@ n = sys.argv[1]
 p = sys.argv[2]
 method = sys.argv[3]
 
-ADVERSARIAL_REGULARIZATION = os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"][1:-1]
+ADVERSARIAL_REGULARIZATION = os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"][1:]
 print(ADVERSARIAL_REGULARIZATION)
 
 print('Noise Level: ' + str(n))
@@ -20,7 +20,7 @@ def runCommand(cmd_string):
     sp.call(cmd_string.split(' '))
 
 out_path = base_path + '/Data_0{}_10k/eval'.format(n)
-out_new_path = base_path + '/Data_0{}_10k/eval/{}/{}'.format(n,method,p)
+out_new_path = base_path + '/Data_0{}_10k/eval/{}/{}/{}'.format(n,method,p,ADVERSARIAL_REGULARIZATION)
 
 create_single_folder(out_new_path)
 
