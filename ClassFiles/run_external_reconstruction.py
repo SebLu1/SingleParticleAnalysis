@@ -10,7 +10,7 @@ p = sys.argv[2]
 method = sys.argv[3]
 
 ADVERSARIAL_REGULARIZATION = os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"][1:]
-print(ADVERSARIAL_REGULARIZATION)
+print('Regularisierung: '+ADVERSARIAL_REGULARIZATION)
 
 print('Noise Level: ' + str(n))
 
