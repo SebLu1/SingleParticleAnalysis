@@ -13,7 +13,7 @@ reconstruct "01" ".005"
 reconstruct "01" ".003"
 
 reconstruct "012" ".01"
-reconstruct ".012" ".0075"
+reconstruct "012" ".0075"
 
 reconstruct "016" ".015"
 reconstruct "016" ".025"
