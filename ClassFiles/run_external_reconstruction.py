@@ -1,5 +1,4 @@
 import subprocess as sp
-from ut import create_single_folder
 import sys
 import os
 
@@ -22,9 +21,17 @@ def runCommand(cmd_string):
 out_path = base_path + '/Data_0{}_10k/eval'.format(n)
 out_new_path = base_path + '/Data_0{}_10k/eval/{}/{}/{}'.format(n,method,p,ADVERSARIAL_REGULARIZATION)
 
+
+def create_single_folder(folder):
+    # creates folder and catches error if it exists already
+    if not os.path.exists(folder):
+        try:
+            os.makedirs(folder)
+        except OSError:
+            pass
+
 create_single_folder(out_new_path)
 
-PDB_ID = ['5A0M']
 MPI_MODE = 'mpirun'
 GPU_ids = ''
 NUM_MPI = 3 #  At least 3 if --split_random_halves is used
