@@ -11,6 +11,11 @@ import os
 ADVERSARIAL_REGULARIZATION = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"])
 print(ADVERSARIAL_REGULARIZATION)
 
+
+print('-------')
+print('Regularization'+str(ADVERSARIAL_REGULARIZATION))
+print('-------')
+
 REGULARIZATION_TY = 1e6
 # ADVERSARIAL_REGULARIZATION = 0.0075
 
@@ -71,10 +76,6 @@ for k in range(70):
 # write final reconstruction to file
 reco_real = irfft(reco)
 
-
-print('-------')
-print(target_path, file['external_reconstruct_general']['rlnExtReconsResult'])
-print('-------')
 
 with mrcfile.new(target_path, overwrite=True) as mrc:
     mrc.set_data(reco_real.astype(np.float32))
