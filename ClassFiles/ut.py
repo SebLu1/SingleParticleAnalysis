@@ -226,14 +226,14 @@ class fftshift_odl(odl.Operator):
 fftshift_tf = odl.contrib.tensorflow.as_tensorflow_layer(fftshift_odl())
 
 # Performs the inverse real fourier transform on Sjors data
-SCALING = 96**2
+SCALING = 96**2 #  In np one divides the ifft by num_vox^3, in Relion with (num_vox^1 * padding_factor^3)
 i_SCALING = 1 / SCALING
 
-def irfft(fourierData):
-    return SCALING*np.fft.fftshift(np.fft.irfftn(fourierData))
+def irfft(fourierData, scaling=SCALING):
+    return scaling*np.fft.fftshift(np.fft.irfftn(fourierData))
 
-def rfft(realData):
-    return i_SCALING*np.fft.rfftn(np.fft.fftshift(realData))
+def rfft(realData, i_scaling=i_SCALING):
+    return i_scaling*np.fft.rfftn(np.fft.fftshift(realData))
 
 def adjoint_irfft(realData):
     x=FOURIER_SIZE[0]
