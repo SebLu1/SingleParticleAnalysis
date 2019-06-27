@@ -42,6 +42,9 @@ if PLATFORM_NODE == 'motel':
 #    print(PLATFORM_NODE)
     base_path = '/local/scratch/public/sl767/MRC_Data'
     MPI_MODE = 'mpirun'
+elif PLATFORM_NODE == 'gelfand':
+    base_path = '/mnt/data/zickert/MRC_Data'
+    MPI_MODE = 'mpirun'   
 else:
     base_path = '/home/sl767/rds/hpc-work/MRC_Data'
 #    MPI_MODE = 'srun'

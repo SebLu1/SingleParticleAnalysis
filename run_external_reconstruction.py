@@ -1,11 +1,12 @@
 import subprocess as sp
 import sys
 import os
+import platform
 
 arguments = sys.argv
 
-n = sys.argv[1]
-p = sys.argv[2]
+n = sys.argv[1] # Noise level
+p = sys.argv[2] # PDB ID
 method = sys.argv[3]
 
 ADVERSARIAL_REGULARIZATION = os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"][1:]
@@ -13,13 +14,18 @@ print('Regularisierung: '+ADVERSARIAL_REGULARIZATION)
 
 print('Noise Level: ' + str(n))
 
-base_path = '/local/scratch/public/sl767/MRC_Data/Data'
+PLATFORM_NODE = platform.node()
 
+if PLATFORM_NODE == 'motel':
+    base_path = '/local/scratch/public/sl767/MRC_Data/Data'
+elif PLATFORM_NODE == 'gelfand':
+    base_path = '/mnt/data/zickert/MRC_Data/Data'
+    
 def runCommand(cmd_string):
     sp.call(cmd_string.split(' '))
 
 out_path = base_path + '/Data_0{}_10k/eval'.format(n)
-out_new_path = base_path + '/Data_0{}_10k/eval/{}/{}/{}'.format(n,method,p,ADVERSARIAL_REGULARIZATION)
+out_new_path = base_path + '/Data_0{}_10k/eval/{}/{}/{}'.format(n, method, p, ADVERSARIAL_REGULARIZATION)
 
 
 def create_single_folder(folder):
