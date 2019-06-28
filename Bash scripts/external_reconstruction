@@ -4,10 +4,10 @@ echo -e "Please choose the reconstruction method. Currently supported are AR and
 read method
 
 if [ "$method" == "AR" ]; then
-    method_path="/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_AR.py"
+    method_path="/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/External_reco_programs/ext_reconstruct_AR.py"
     echo -e "Adversarial Regularizer reconstruction chosen"
 else
-    method_path="/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ext_reconstruct_RED.py"
+    method_path="/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/External_reco_programs/ext_reconstruct_RED.py"
     echo -e "RED reconstruction chosen"
 fi
 
@@ -21,6 +21,8 @@ if [ "$method" == "AR" ]; then
     echo -e "Please enter the regularization parameter"
     read reg_par
     export RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION=$reg_par
+    python /mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ClassFiles/run_external_reconstruction.py $noise_level '5A0M' $method $reg_par
+else
+    python /mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ClassFiles/run_external_reconstruction.py $noise_level '5A0M' $method 
 fi
 
-python /mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/ClassFiles/run_external_reconstruction.py $noise_level '5A0M' $method $reg_par

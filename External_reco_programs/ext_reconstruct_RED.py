@@ -2,71 +2,54 @@
 
 import numpy as np
 import mrcfile
+import platform
+PLATFORM_NODE = platform.node()
+if PLATFORM_NODE = 'motel':
+    sys.path.insert(0, '/home/sl767/PythonCode/SingleParticleAnalysis')
 from ClassFiles.relion_fixed_it import load_star
-from ClassFiles.Denoiser import Denoiser
+from ClassFiles.AdversarialRegularizer import Denoiser
 from ClassFiles.ut import irfft
 import sys
+import os
+import subprocess as sp 
 
-REGULARIZATION_TY = 1e6
-SAVES_PATH = '/local/scratch/public/sl767/SPA/Saves/Densoier/...'
+default_ext_reco_prog = '/home/sl767/bin/relion-devel-lmb/src/apps/external_reconstruct.cpp'
 
-path = sys.argv
+def runCommand(cmd_string):
+    sp.call(cmd_string.split(' '))
+
+SAVES_PATH = '/local/scratch/public/sl767/SPA/Saves/Denoiser/All_EM'
+den = Denoiser(SAVES_PATH, load=True)
+
+star_path = sys.argv[1]
 assert len(path) == 2
-file = load_star(path[1])
+star_file = load_star(star_path)
 
-iteration = ''
-l = path[1].split('_')
+iteration=''
+l = star_path.split('_')
 for det in l:
-    if det[0: 2] == 'it':
-        iteration = det[2 : 5]
-iteration = int(iteration)
+    if det[0:2]=='it':
+        iteration = det[2:5]
         
-        
-with mrcfile.open(file['external_reconstruct_general']['rlnExtReconsDataReal']) as mrc:
-    data_real = mrc.data
-with mrcfile.open(file['external_reconstruct_general']['rlnExtReconsDataImag']) as mrc:
-    data_im = mrc.data
-with mrcfile.open(file['external_reconstruct_general']['rlnExtReconsWeight']) as mrc:
-    kernel = mrc.data
-
-target_path = file['external_reconstruct_general']['rlnExtReconsResult']
-complex_data = data_real + 1j * data_im
+print('Iteration: {}'.format(iteration))
 
 
-tikhonov_kernel = kernel + REGULARIZATION_TY
+target_path = star_file['external_reconstruct_general']['rlnExtReconsResult']
 
-tikhonov = np.divide(complex_data, tikhonov_kernel)
-reco = np.copy(tikhonov)
+print('Classical Relion M-step...')
+runCommand(default_ext_reco_prog + ' ' + target_path)
+print('Classical Relion M-step Completed')
 
-denoiser = Denoiser(SAVES_PATH)
 
-def red_reg_grad(x):
-    return x - denoiser.evaluate(x)
+with mrcfile.open(target_path) as mrc:
+    rel_reco = mrc.data.copy()
 
-# The scales produce gradients of order 1
-REG_SCALE = (96 ** (-0.5))
-DATA_SCALE = 1 / (10 * 96 ** 3)
-IMAGING_SCALE = 96
-REG_PARAM = 1
+rel_reco_norm = np.sum(np.abs(rel_reco))    
 
-for k in range(70):
-    STEP_SIZE = 2.0 * 1 / np.sqrt(1 + k / 20)
+denoised = den.evaluate(rel_reco)
+den_norm = np.sum(np.abs(denoised))
 
-    g1 = REG_PARAM * REG_SCALE * np.fft.rfft(red_reg_grad(np.fft.irfft(reco)))
-    g2 = DATA_SCALE * (np.multiply(reco, tikhonov_kernel) - complex_data)
-
-    g = g1 + g2
-    reco = reco + STEP_SIZE * g
-
-    # Enforce positivy
-    reco = np.fft.rfftn(np.maximum(0, np.fft.irfftn(reco)))
-
-# write final reconstruction to file
-reco_real = irfft(reco)
-
-print('-------')
-print(target_path, file['external_reconstruct_general']['rlnExtReconsResult'])
-print('-------')
+denoised *= rel_reco_norm/den_norm
 
 with mrcfile.new(target_path, overwrite=True) as mrc:
     mrc.set_data(reco_real.astype(np.float32))

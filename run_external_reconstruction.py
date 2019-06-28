@@ -9,8 +9,9 @@ n = sys.argv[1] # Noise level
 p = sys.argv[2] # PDB ID
 method = sys.argv[3]
 
-ADVERSARIAL_REGULARIZATION = os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"][1:]
-print('Regularisierung: '+ADVERSARIAL_REGULARIZATION)
+if method == 'AR'
+    ADVERSARIAL_REGULARIZATION = os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"][1:]
+    print('Regularisierung: '+ADVERSARIAL_REGULARIZATION)
 
 print('Noise Level: ' + str(n))
 
@@ -25,8 +26,10 @@ def runCommand(cmd_string):
     sp.call(cmd_string.split(' '))
 
 out_path = base_path + '/Data_0{}_10k/eval'.format(n)
-out_new_path = base_path + '/Data_0{}_10k/eval/{}/{}/{}'.format(n, method, p, ADVERSARIAL_REGULARIZATION)
-
+if method == 'AR':
+    out_new_path = base_path + '/Data_0{}_10k/eval/{}/{}/{}'.format(n, method, p, ADVERSARIAL_REGULARIZATION)
+else:
+    out_new_path = base_path + '/Data_0{}_10k/eval/{}/{}'.format(n, method, p)    
 
 def create_single_folder(folder):
     # creates folder and catches error if it exists already
