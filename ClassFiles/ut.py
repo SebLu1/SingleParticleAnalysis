@@ -4,8 +4,14 @@ from odl.contrib import tensorflow
 import numpy as np
 import fnmatch
 import tensorflow as tf
+import platform
 
-BASE_PATH = '/local/scratch/public/sl767/MRC_Data/'
+PLATFORM_NODE = platform.node()
+
+if PLATFORM_NODE == 'motel':
+    BASE_PATH = '/local/scratch/public/sl767/MRC_Data/'
+elif PLATFORM_NODE == 'gelfand':
+    BASE_PATH = '/mnt/data/zickert/MRC_Data/'
 DATA_PATH = BASE_PATH + 'Data/'
 GT_PATH = BASE_PATH + 'org/'
 

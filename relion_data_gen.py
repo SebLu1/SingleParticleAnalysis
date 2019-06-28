@@ -11,18 +11,18 @@ import platform
 
 #print(SCRIPT_ARGS)
 
-GPU_ids = ''# '0:1' 
+GPU_ids = '0'# '0:1' 
 NUM_MPI = 3 #  At least 3 if --split_random_halves is used
 
-mk_dirs = input('Make dirs? (True/False):') #False
-create_projs = input('Create projections? (True/False):')# False
-run_SGD = input('Run SGD? (True/False):')# False
-run_EM = input('Run EM? (True/False):')# True
-EVAL_DATA = input('Eval data? (True/False):')# True
+mk_dirs = '1' == input('Make dirs? (True/False):') #False
+create_projs = '1' == input('Create projections? (True/False):')# False
+run_SGD = '1' == input('Run SGD? (True/False):')# False
+run_EM = '1' == input('Run EM? (True/False):')# True
+EVAL_DATA = '1' == input('Eval data? (True/False):')# True
 train_folder = input('PDB folder (0-9)')
 START_MOL = int(input('Start-index:')) #0
 END_MOL = int(input('Stop-index:')) #30
-run_manual_single_PDB = input('Use single PDB instead (thus overriding last three inputs)? (True/False):')# True
+run_manual_single_PDB = '1' == input('Use single PDB instead (thus overriding last three inputs)? (True/False):')# True
 if run_manual_single_PDB:
     manual_single_PDB = input('Single PDB id:')# 5A0M
 
@@ -89,7 +89,7 @@ else:
     
 PDB_ID = find_PDB_ID('*.mrc', '{TrP}/{TrF}'.format(TrP=train_path, TrF=train_folder))
 PDB_ID = PDB_ID[START_MOL: END_MOL]
-if run_manual_single_PDB:
+if run_manual_single_PDB == '1':
     PDB_ID = [manual_single_PDB]
 
 print('PDB ids: ', PDB_ID)

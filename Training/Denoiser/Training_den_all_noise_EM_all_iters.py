@@ -1,52 +1,44 @@
 import mrcfile
 import numpy as np
+import sys
+sys.path.insert(0, '/home/zickert/SingleParticleAnalysis')
 from ClassFiles.Denoiser import Denoiser
-from ClassFiles.ut import find, locate_gt
+from ClassFiles.ut import getRecos, locate_gt
 import random
+import platform
 
-saves_path = '/local/scratch/public/sl767/SPA/Saves/Denoiser/002_SGD_trained_lp30'
-denoiser = Denoiser(saves_path, load=True)
+PLATFORM_NODE = platform.node()
 
+if PLATFORM_NODE == 'gelfand':
+    base_path = '/mnt/data/zickert/SPA/Saves/'
+saves_path = base_path + 'Denoiser/All_EM'
 
 
 BATCH_SIZE = 1
-LEARNING_RATE = 0.00005
-LOOPS = 5
+LEARNING_RATE = 1e-5 #  1e-3 is TF default for Adam
+LOOPS = 50
 STEPS = 1000
 
-GT_PATH = '/local/scratch/public/sl767/MRC_Data/org/'
+NOISE = ['01', '012', '016', '02']
+METHOD = 'EM'
 
-SGD_PATH = '/local/scratch/public/sl767/MRC_Data/Data_002_10k/SGD'
-SGD_PATH_MORE_NOISE = '/local/scratch/public/sl767/MRC_Data/Data_001_10k/SGD'
-EM_PATH = '/local/scratch/public/sl767/MRC_Data/Data_002_10k/EM'
-EM_PATH_MORE_NOISE = '/local/scratch/public/sl767/MRC_Data/Data_001_10k/EM'
-
-train_list_sgd_001 = find('*it300_class001.mrc', SGD_PATH_MORE_NOISE)
-train_list_sgd_002 = find('*it300_class001.mrc', SGD_PATH)
-train_list_em_001 = find('*mult001_class001.mrc', EM_PATH_MORE_NOISE)
-train_list_em_002 = find('*mult002_class001.mrc', EM_PATH)
-train_list_em_002_iter001 = find('*it001_half1_class001.mrc', EM_PATH)
-
-train_list = train_list_sgd_002
-
-
-# Take only particles starting with 3. They have lp30 of gt as ini pt.
-tmp = []
-for p in train_list:
-    if p.split('/')[-1][0] == '3':
-        tmp.append(p)
-train_list = tmp
-
+train_list = []
+eval_list = []
+for n in NOISE:
+    train_list.extend(getRecos(noise=n, method=METHOD, iter='All', eval_data=False))
+    eval_list.extend(getRecos(noise=n, method=METHOD, iter='All', eval_data=True))
 
 train_amount = len(train_list)
-
 print('# Training data points: ' + str(train_amount))
-
-eval_list = ['/local/scratch/public/sl767/MRC_Data/Data_002_10k/SGD/9ICA/9ICA_mult002_it300_class001.mrc']
-
+#print(train_list)
 eval_amount = len(eval_list)
-print(eval_list)
 print('# Evaluation data points: ' + str(eval_amount))
+#print(eval_list)
+input('Train/Eval Data OK?')
+print(saves_path)
+input('Saves path OK?')
+
+denoiser = Denoiser(saves_path, solver='Adam', load=True)
 
 def get_image(number, training):
     if training:
@@ -78,9 +70,6 @@ def get_batch(training_data=True):
         adv[k, ...] = adver
     return true, adv
 
-
-
-
 def evaluate():
     gt, adv = get_batch(training_data=True)
     a, b = get_batch(training_data=False)
@@ -92,7 +81,7 @@ def train(steps):
         gt, adv = get_batch()
         denoiser.train(groundTruth=gt, noisy=adv,
                        learning_rate=LEARNING_RATE)
-        if k % 5 == 0:
+        if k % 50 == 0:
             evaluate()
     denoiser.save()
 

@@ -15,7 +15,7 @@ def data_augmentation_default(gt, adv):
 
 class Denoiser(object):
 
-    def __init__(self, path, data_augmentation=data_augmentation_default, solver='Adam', load=False):
+    def __init__(self, path, data_augmentation=data_augmentation_default, solver='Adam', load=False, cp=None):
 
         self.path = path
         self.network = UNet()
@@ -59,13 +59,13 @@ class Denoiser(object):
  #           l.append(tf.summary.scalar('Norm_Gradient', tf.norm(self.gradient)))
             with tf.name_scope('Maximum_Projection'):
                 summary_list.append(tf.summary.image('Noisy', tf.reduce_max(self.data_normed, axis=3), max_outputs=1))
-                summary_list.append(tf.summary.image('Ground Truth', tf.reduce_max(self.true_normed, axis=3), max_outputs=1))
+                summary_list.append(tf.summary.image('Ground_Truth', tf.reduce_max(self.true_normed, axis=3), max_outputs=1))
                 summary_list.append(tf.summary.image('Denoised', tf.reduce_max(tf.abs(self.denoised), axis=3), max_outputs=1))
 #                l.append(tf.summary.image('Gradient_GT', tf.reduce_max(tf.abs(gradient_track), axis=3), max_outputs=1))
             slice = int(IMAGE_SIZE[3]/2)
             with tf.name_scope('Slice_Projection'):
                 summary_list.append(tf.summary.image('Noisy', self.data_normed[..., slice, :], max_outputs=1))
-                summary_list.append(tf.summary.image('Ground Truth', self.true_normed[..., slice, :], max_outputs=1))
+                summary_list.append(tf.summary.image('Ground_Truth', self.true_normed[..., slice, :], max_outputs=1))
                 summary_list.append(tf.summary.image('Denoised', self.denoised[..., slice, :],  max_outputs=1))
  #               l.append(tf.summary.image('Gradient_GT', gradient_track[..., slice, :], max_outputs=1))
 
@@ -80,7 +80,7 @@ class Denoiser(object):
 
         # load existing saves
         if load:
-            self.load()
+            self.load(cp)
 
     def evaluate(self, data):
         return self.denoised.eval(feed_dict={self.data: data})
@@ -112,14 +112,22 @@ class Denoiser(object):
                    global_step=self.global_step)
         print('Progress saved')
 
-    def load(self):
+    def load(self, cp):
         saver = tf.train.Saver()
-        if os.listdir(self.path + '/Data/'):
-            saver.restore(self.sess,
-                          tf.train.latest_checkpoint(self.path + '/Data/'))
-            print('Save restored')
+        if cp == None:
+            if os.listdir(self.path + '/Data/'):
+                saver.restore(self.sess,
+                              tf.train.latest_checkpoint(self.path + '/Data/'))
+                print('Save restored')
+            else:
+                print('No save found')
         else:
-            print('No save found')
+            if os.listdir(cp):
+                saver.restore(self.sess,
+                              tf.train.latest_checkpoint(cp))
+                print('Save restored')
+            else:
+                print('No save found')
 
     def end(self):
         tf.reset_default_graph()

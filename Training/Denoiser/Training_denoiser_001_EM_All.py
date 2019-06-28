@@ -1,8 +1,12 @@
 import mrcfile
 import numpy as np
+import sys
+sys.path.insert(0, 'SingleParticleAnalysis/ClassFiles')
 from ClassFiles.Denoiser import Denoiser
 from ClassFiles.ut import getRecos, locate_gt
 import random
+import platform
+
 
 saves_path = '/local/scratch/public/sl767/SPA/Saves/Denoiser/All_EM_001_trained_LR_1e-5'
 
