@@ -9,7 +9,7 @@ n = sys.argv[1] # Noise level
 p = sys.argv[2] # PDB ID
 method = sys.argv[3]
 
-if method == 'AR'
+if method == 'AR':
     ADVERSARIAL_REGULARIZATION = os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"][1:]
     print('Regularisierung: '+ADVERSARIAL_REGULARIZATION)
 

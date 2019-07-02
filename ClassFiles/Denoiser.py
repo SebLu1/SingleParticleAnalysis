@@ -83,7 +83,8 @@ class Denoiser(object):
             self.load(cp)
 
     def evaluate(self, data):
-        return self.denoised.eval(feed_dict={self.data: data})
+        data_uf = ut.unify_form(data)
+        return self.denoised.eval(feed_dict={self.data: data_uf})[0, ..., 0]
 
     def train(self, groundTruth, noisy, learning_rate=None):
         groundTruth = ut.unify_form(groundTruth)
