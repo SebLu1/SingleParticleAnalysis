@@ -76,9 +76,10 @@ def find_PDB_ID(pattern, path):
                 result.append((os.path.join(root, name).replace("\\", "/"))[-8:-4])
     return result
 
-
+# train_path also contains phantoms used for eval, but projections,
+# recos et.c. for eval will be stored in location different from 
+# corresponding train files.
 train_path = base_path + '/org/training'
-test_path = base_path + '/org/eval'
 
 out_path = base_path + '/Data/Data_0{N}_10k'
 
