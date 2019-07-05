@@ -167,7 +167,7 @@ if run_EM:
             refine_cmd += ' --gpu "{GPU_ids}"'
             if not EVAL_DATA:
                 pass
-            refine_cmd += ' --external_reconstruct'
+#            refine_cmd += ' --external_reconstruct'
 #--maximum_angular_sampling 1.8'
             refine_cmd += ' --j 6' # Number of threads to run in parallel (only useful on multi-core machines)
             refine_cmd += ' --pool 30' # Number of images to pool for each thread task

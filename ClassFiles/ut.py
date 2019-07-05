@@ -39,9 +39,10 @@ def startingZeros(n):
         return str(n)
 
 
-def getRecos(noise, method, iter='Final', eval_data=False):
+def getRecos(noise, method, iter='Final', eval_data=False,
+             data_path=DATA_PATH):
     path_list = []
-    folder = DATA_PATH + 'Data_0{}_10k/'.format(noise)
+    folder = data_path + 'Data_0{}_10k/'.format(noise)
     if eval_data == True:
         folder += 'eval/'
     else:

@@ -1,41 +1,28 @@
 import mrcfile
 import numpy as np
-from ClassFiles.ut import getRecos, locate_gt
+from ut import getRecos, locate_gt
 import random
 
-# The path to find corresponding ground truth images
-GT_PATH = '/local/scratch/public/sl767/MRC_Data/org/'
-
-NOISE_LEVELS = ['01', '016', '02']
-METHODS = ['EM', 'SGD']
-BATCH_SIZE = 1
+DEFAULT_BATCH_SIZE = 1
 
 
-def get_dic(noise_levels, methodes, eval_data):
-    train_dic = {}
+def get_dict(noise_levels, methodes, eval_data, data_path=None):
+    train_dict = {}
     for nl in noise_levels:
-        train_dic[nl] = {}
+        train_dict[nl] = {}
         for met in methodes:
             if met == 'EM':
-                train_dic[nl][met] = getRecos(nl, met, eval_data=eval_data, iter='All')
+                train_dict[nl][met] = getRecos(nl, met, eval_data=eval_data, iter='All', data_path=data_path)
             elif met == 'SGD':
-                train_dic[nl][met] = getRecos(nl, met, eval_data=eval_data, iter='Final')
+                train_dict[nl][met] = getRecos(nl, met, eval_data=eval_data, iter='Final', data_path=data_path)
             else:
                 raise ValueError('Enter valid noise level')
-    return train_dic
+    return train_dict
 
 
-train_dic = get_dic(NOISE_LEVELS, METHODS, eval_data=False)
-eval_dic = get_dic(NOISE_LEVELS, METHODS, eval_data=True)
-
-
-def get_image(noise_level, methode, eval_data):
-    if eval_data:
-        d = eval_dic
-    else:
-        d = train_dic
-    l = d[noise_level][methode]
-    adv_path = random.choice(l)
+def get_image(noise_level, method, data_dict):
+    data_list = data_dict[noise_level][method]
+    adv_path = random.choice(data_list)
 
     with mrcfile.open(adv_path) as mrc:
         adv = mrc.data
@@ -44,13 +31,14 @@ def get_image(noise_level, methode, eval_data):
     return gt, adv
 
 
-def get_batch(batch_size=BATCH_SIZE, noise_levels=NOISE_LEVELS, methods=METHODS, eval_data=False):
-    true = np.zeros(shape=(batch_size, 96,96,96))
-    adv = np.zeros(shape=(batch_size, 96,96,96))
-    for k in range(BATCH_SIZE):
+def get_batch(noise_levels, methods, batch_size=DEFAULT_BATCH_SIZE,
+              eval_data=False, data_dict=None):
+    true = np.zeros(shape=(batch_size, 96, 96, 96))
+    adv = np.zeros(shape=(batch_size, 96, 96, 96))
+    for k in range(batch_size):
         nl = random.choice(noise_levels)
         methode = random.choice(methods)
-        gt, adver = get_image(nl, methode, eval_data)
+        gt, adver = get_image(nl, methode, eval_data, data_dict)
         true[k, ...] = gt
         adv[k, ...] = adver
     return true, adv

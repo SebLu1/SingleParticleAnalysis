@@ -14,13 +14,13 @@ create_projs = True
 run_SGD = True
 run_EM = True
 EVAL_DATA = True
-START_MOL = 0
-END_MOL = 50
 
 noise_level = ['01', '012', '016', '02']
 
 SGD_ini_method = 'lowpass'
 SGD_lowpass_frec = 30
+
+PDB_ID = ['5A0M']
 
 # Make sure we use the default ext. reco. program
 os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = ''
@@ -53,8 +53,6 @@ if EVAL_DATA:
     out_path = out_path + '/eval'
 else:
     out_path = out_path + '/train'
-
-PDB_ID = ['5A0M']
 
 print('PDB ids: ', PDB_ID)
 print('Eval data: ', EVAL_DATA)
@@ -161,7 +159,7 @@ if run_EM:
             refine_cmd += ' --gpu "{GPU_ids}"'
             if not EVAL_DATA:
                 pass
-            refine_cmd += ' --external_reconstruct'
+#            refine_cmd += ' --external_reconstruct'
 #--maximum_angular_sampling 1.8'
             refine_cmd += ' --j 6' # Number of threads to run in parallel (only useful on multi-core machines)
             refine_cmd += ' --pool 30' # Number of images to pool for each thread task
