@@ -47,6 +47,7 @@ log_file.write('Train data:\n' + str(TRAIN_DICT) + '\n')
 log_file.write('Eval data:\n' + str(EVAL_DICT) + '\n')
 log_file.close()
 
+
 def data_augmentation(gt, adv):
     _, adv1 = interpolation(gt, adv)
     _, adv2 = phase_augmentation(gt, adv1)
@@ -60,15 +61,14 @@ regularizer = AdversarialRegulariser(SAVES_PATH, data_augmentation,
 
 
 def evaluate():
-    gt, adv = get_batch(batch_size=BATCH_SIZE, eval_data=True,
-                        noise_levels=EVAL_NOISE_LEVELS,
+    gt, adv = get_batch(batch_size=BATCH_SIZE, noise_levels=EVAL_NOISE_LEVELS,
                         methods=EVAL_METHODS, data_dict=EVAL_DICT)
     regularizer.test(groundTruth=gt, adversarial=adv)
 
 
 def train(steps):
     for k in range(steps):
-        gt, adv = get_batch(batch_size=BATCH_SIZE, eval_data=False,
+        gt, adv = get_batch(batch_size=BATCH_SIZE,
                             noise_levels=TRAIN_NOISE_LEVELS,
                             methods=TRAIN_METHODS, data_path=TRAIN_DICT)
         regularizer.train(groundTruth=gt, adversarial=adv,
