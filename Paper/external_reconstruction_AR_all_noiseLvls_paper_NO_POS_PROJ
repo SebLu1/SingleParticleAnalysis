@@ -1,0 +1,30 @@
+#!/bin/bash
+
+export RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE="/mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/Paper/ext_reconstruct_AR_paper_NO_POS_PROJ.py"
+method="AR"
+
+# first argument is noise level, second regularization parameter
+reconstruct () {
+    export RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION=$2
+    python /mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/Paper/run_external_reconstruction_paper_NO_POS_PROJ.py $1 '5A0M' "AR" $2
+}
+
+reconstruct "01" "0.0"
+reconstruct "01" "0.6"
+#reconstruct "01" "1.0"
+#reconstruct "01" "10.0"
+
+#reconstruct "012" "0.0"
+#reconstruct "012" "1.5"
+#reconstruct "012" "2.0"
+#reconstruct "012" "20.0"
+
+#reconstruct "016" "0.0"
+#reconstruct "016" "3.0"
+#reconstruct "016" "5.0"
+#reconstruct "016" "30.0"
+
+#reconstruct "02" "0.0"
+#reconstruct "02" "6.0"
+#reconstruct "02" "10.0"
+#reconstruct "02" "100.0"

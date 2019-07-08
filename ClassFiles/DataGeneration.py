@@ -1,6 +1,11 @@
 import mrcfile
 import numpy as np
-from ut import getRecos, locate_gt
+import platform
+PLATFORM_NODE = platform.node()
+import sys
+if PLATFORM_NODE == 'motel':
+    sys.path.insert(0, '/home/sl767/PythonCode/SingleParticleAnalysis')
+from ClassFiles.ut import getRecos, locate_gt
 import random
 
 DEFAULT_BATCH_SIZE = 1

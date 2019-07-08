@@ -9,7 +9,7 @@ from ClassFiles.DataAugmentation import (interpolation, phase_augmentation,
 from ClassFiles.DataGeneration import get_batch, get_dict
 
 SAVES_PATH = '/local/scratch/public/sl767/SPA/Saves/SimDataPaper/'
-SAVES_PATH += 'Adversarial_Regulariser/Cutoff_20/Translation_Augmentation'
+SAVES_PATH += 'Adversarial_Regulariser/Cutoff_20/Roto-Translation_Augmentation'
 
 PAPER_DATA_PATH = '/local/scratch/public/sl767/MRC_Data/Data/SimDataPaper/'
 LOG_FILE_PATH = SAVES_PATH + '/train_eval_data_logfile.txt'
@@ -42,12 +42,6 @@ EVAL_DICT = get_dict(EVAL_NOISE_LEVELS, EVAL_METHODS, eval_data=True,
                      data_path=PAPER_DATA_PATH)
 
 
-log_file = open(LOG_FILE_PATH, "w")
-log_file.write('Train data:\n' + str(TRAIN_DICT) + '\n')
-log_file.write('Eval data:\n' + str(EVAL_DICT) + '\n')
-log_file.close()
-
-
 def data_augmentation(gt, adv):
     _, adv1 = interpolation(gt, adv)
     _, adv2 = phase_augmentation(gt, adv1)
@@ -58,6 +52,12 @@ def data_augmentation(gt, adv):
 
 regularizer = AdversarialRegulariser(SAVES_PATH, data_augmentation,
                                      s=S, cutoff=20.0, lmb=LMB, gamma=GAMMA)
+
+log_file = open(LOG_FILE_PATH, "w")
+log_file.write('Train data:\n' + str(TRAIN_DICT) + '\n')
+log_file.write('Eval data:\n' + str(EVAL_DICT) + '\n')
+log_file.close()
+
 
 
 def evaluate():
@@ -70,7 +70,7 @@ def train(steps):
     for k in range(steps):
         gt, adv = get_batch(batch_size=BATCH_SIZE,
                             noise_levels=TRAIN_NOISE_LEVELS,
-                            methods=TRAIN_METHODS, data_path=TRAIN_DICT)
+                            methods=TRAIN_METHODS, data_dict=TRAIN_DICT)
         regularizer.train(groundTruth=gt, adversarial=adv,
                           learning_rate=LEARNING_RATE)
         if k % 50 == 0:

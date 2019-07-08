@@ -12,6 +12,7 @@ FOURIER_SIZE = (None, 96, 96, 49, 1)
 def data_augmentation_default(gt, adv):
     return gt, adv
 
+
 class AdversarialRegulariser(object):
     # sets up the network architecture
     def __init__(self, path, data_augmentation=data_augmentation_default, s=0.0, cutoff=20.0, gamma=1.0, lmb=10.0):
@@ -19,9 +20,9 @@ class AdversarialRegulariser(object):
         self.path = path
         self.network = ResNetClassifier()
         self.sess = tf.InteractiveSession()
-        self.run_options = tf.RunOptions(report_tensor_allocations_upon_oom = True)
+        self.run_options = tf.RunOptions(report_tensor_allocations_upon_oom=True)
 
-        ut.create_single_folder(self.path+'/Data')
+        ut.create_single_folder(self.path + '/Data')
         ut.create_single_folder(self.path + '/Logs')
 
         # A Tensorflow Fourier transform
@@ -110,7 +111,12 @@ class AdversarialRegulariser(object):
         real_data = self.sess.run(self.real_data, feed_dict={self.fourier_data: fourierData})
         normalized_data = normalize_np(real_data)
         grad = self.sess.run(self.gradient, feed_dict={self.gen_normed: normalized_data})
-        return ut.adjoint_irfft(grad[0,...,0])
+        USE_ADJOINT_IRFFT = False
+        if USE_ADJOINT_IRFFT:
+            return ut.adjoint_irfft(grad[0,...,0])
+        else:
+            return ut.rfft(grad[0,...,0])
+
 
     def evaluate_real(self, real_data):
         normalized_data = normalize_np(real_data)
@@ -138,16 +144,18 @@ class AdversarialRegulariser(object):
 
     def save(self):
         saver = tf.train.Saver()
-        saver.save(self.sess, self.path+'/Data/model', global_step=self.global_step)
+        saver.save(self.sess, self.path + '/Data/model', global_step=self.global_step)
         print('Progress saved')
+
 
     def load(self):
         saver = tf.train.Saver()
-        if os.listdir(self.path+'/Data/'):
-            saver.restore(self.sess, tf.train.latest_checkpoint(self.path+'/Data/'))
+        if os.listdir(self.path +'/Data/'):
+            saver.restore(self.sess, tf.train.latest_checkpoint(self.path + '/Data/'))
             print('Save restored')
         else:
             print('No save found')
+
 
     def end(self):
         tf.reset_default_graph()
