@@ -5,14 +5,16 @@ export RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE="/mhome/maths/s/sl767/PythonCode/S
 
 # first argument is noise level, second regularization parameter
 reconstruct () {
-#    export RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION=$2
+    export RELION_EXTERNAL_RECONSTRUCTION_TIK_REG=$2
     python /mhome/maths/s/sl767/PythonCode/SingleParticleAnalysis/Paper/run_external_reconstruction_paper_ONLY_TIKHONOV.py $1 '5A0M' "ONLY_TIKHONOV" $2
 }
 
-reconstruct "01" "0.0"
-#reconstruct "01" "0.6"
-#reconstruct "01" "1.0"
-#reconstruct "01" "10.0"
+reconstruct "01" "1e4"
+reconstruct "01" "1e5"
+reconstruct "01" "1e6"
+reconstruct "01" "1e7"
+reconstruct "01" "1e8"
+reconstruct "01" "1e9"
 
 #reconstruct "012" "0.0"
 #reconstruct "012" "1.5"

@@ -9,9 +9,9 @@ n = sys.argv[1] # Noise level
 p = sys.argv[2] # PDB ID
 method = sys.argv[3]
 
-#if method == 'AR':
-#    ADVERSARIAL_REGULARIZATION = os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"]#[1:]
-#    print('Regularization: ' + ADVERSARIAL_REGULARIZATION)
+if method == 'ONLY_TIKHONOV':
+    TIK_REG = os.environ["RELION_EXTERNAL_RECONSTRUCTION_TIK_REG"]#[1:]
+    print('TIK. REG: ' + TIK_REG)
 
 print('Noise Level: ' + str(n))
 
@@ -25,7 +25,7 @@ def runCommand(cmd_string):
 
 out_path = base_path + '/Data_0{}_10k/eval'.format(n)
 if method == 'ONLY_TIKHONOV':
-    out_new_path = base_path + '/Data_0{}_10k/eval/{}/{}'.format(n, method, p)
+    out_new_path = base_path + '/Data_0{}_10k/eval/{}/{}/{}'.format(n, method, p, TIK_REG)
 #else:
 #    out_new_path = base_path + '/Data_0{}_10k/eval/{}/{}'.format(n, method, p)    
 

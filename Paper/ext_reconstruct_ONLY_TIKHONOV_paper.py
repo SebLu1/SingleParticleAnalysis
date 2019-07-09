@@ -12,15 +12,15 @@ from ClassFiles.relion_fixed_it import load_star
 from ClassFiles.ut import irfft
 import os
 
-#ADVERSARIAL_REGULARIZATION = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"])
-#print(ADVERSARIAL_REGULARIZATION)
+TIK_REG = float(os.environ["RELION_EXTERNAL_RECONSTRUCTION_TIK_REG"])
+print('TIK_REG' + TIK_REG)
 
 
 #print('-------')
 #print('Regularization'+str(ADVERSARIAL_REGULARIZATION))
 #print('-------')
 
-REGULARIZATION_TY = 1e6
+REGULARIZATION_TY = TIK_REG
 # ADVERSARIAL_REGULARIZATION = 0.0075
 
 #SAVES_PATH = '/local/scratch/public/sl767/SPA/Saves/SimDataPaper/'
