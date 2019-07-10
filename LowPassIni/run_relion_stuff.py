@@ -79,7 +79,8 @@ for folder in PDB_FOLDER:
                              Fol=folder))
     PDB_ID_tmp = PDB_ID_tmp[START_MOL: END_MOL]
     PDB_ID.extend(PDB_ID_tmp)
-print(PDB_ID)
+    print('{OrgP}/{Fol}'.format(OrgP=ORG_PATH,
+                             Fol=folder))
 
 if args['pdb_id'] is not '0':
     PDB_ID = args['pdb_id']
