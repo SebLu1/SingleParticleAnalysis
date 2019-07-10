@@ -35,8 +35,8 @@ create_projs = int(args['projs'])
 run_EM = int(args['em'])
 EVAL_DATA = int(args['eval'])
 PDB_FOLDER = args['pdb_folder'].split(' ')
-START_MOL = args['pdb_start_idx']
-END_MOL = args['pdb_end_idx']
+START_MOL = int(args['pdb_start_idx'])
+END_MOL = int(args['pdb_end_idx'])
 
 noise_level = args['noise'].split(' ')
 
