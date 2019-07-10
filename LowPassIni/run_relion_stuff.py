@@ -15,6 +15,10 @@ parser.add_argument('--eval', help='Which GPUs?',
                     required=True)
 parser.add_argument('--pdb_folder', help='PDB-Folder',
                     required=True)
+parser.add_argument('--pdb_start_idx', help='pdb_start_idx',
+                    required=True)
+parser.add_argument('--pdb_end_idx', help='pdb_end_idx',
+                    required=True)
 parser.add_argument('--pdb_id', help='PDB ID (if none, give 0)',
                     required=True)
 parser.add_argument('--noise', help='Noise levels',
@@ -31,8 +35,8 @@ create_projs = int(args['projs'])
 run_EM = int(args['em'])
 EVAL_DATA = int(args['eval'])
 PDB_FOLDER = args['pdb_folder'].split(' ')
-START_MOL = 0
-END_MOL = 15
+START_MOL = args['pdb_start_idx']
+END_MOL = args['pdb_end_idx']
 
 noise_level = args['noise'].split(' ')
 
