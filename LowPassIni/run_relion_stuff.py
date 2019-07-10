@@ -13,9 +13,9 @@ parser.add_argument('--gpu', help='Which GPUs? (empty string means all)',
                     required=True)
 parser.add_argument('--eval', help='Which GPUs?',
                     required=True)
-parser.add_argument('--pdb-folder', help='PDB-Folder',
+parser.add_argument('--pdb_folder', help='PDB-Folder',
                     required=True)
-parser.add_argument('--pdb-id', help='PDB ID (if none, give 0)',
+parser.add_argument('--pdb_id', help='PDB ID (if none, give 0)',
                     required=True)
 parser.add_argument('--noise', help='Noise levels',
                     required=True)
@@ -30,7 +30,7 @@ mk_dirs = True
 create_projs = int(args['projs'])
 run_EM = int(args['em'])
 EVAL_DATA = int(args['eval'])
-PDB_FOLDER = args['pdb-folder'].split(' ')
+PDB_FOLDER = args['pdb_folder'].split(' ')
 START_MOL = 0
 END_MOL = 15
 
@@ -80,8 +80,8 @@ for train_folder in PDB_FOLDER:
     PDB_ID_tmp = PDB_ID_tmp[START_MOL: END_MOL]
     PDB_ID.extend(PDB_ID_tmp)
 
-if args['pdb-id'] is not '0':
-    PDB_ID = args['pdb-id']
+if args['pdb_id'] is not '0':
+    PDB_ID = args['pdb_id']
 
 print('PDB ids: ', PDB_ID)
 print('Eval data: ', EVAL_DATA)
