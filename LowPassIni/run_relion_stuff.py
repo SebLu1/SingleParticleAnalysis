@@ -1,28 +1,52 @@
-# Generate adversarial maps for Learned Prior Paper
-
-
+import platform
+import argparse
 import subprocess as sp
 import os
 import fnmatch
 
+parser = argparse.ArgumentParser(description='Run RELION stuff')
+parser.add_argument('--projs', help='Create projections? (0/1)',
+                    required=True)
+parser.add_argument('--em', help='Run EM? (0/1)',
+                    required=True)
+parser.add_argument('--gpu', help='Which GPUs? (empty string means all)',
+                    required=True)
+parser.add_argument('--eval', help='Which GPUs?',
+                    required=True)
+parser.add_argument('--pdb-folder', help='PDB-Folder',
+                    required=True)
+parser.add_argument('--pdb-id', help='PDB ID (if none, give 0)',
+                    required=True)
+parser.add_argument('--noise', help='Noise levels',
+                    required=True)
+parser.add_argument('--ext', help='Which exernal reco? (0, def, AR, RED)',
+                    required=True)
+args = vars(parser.parse_args())
 
-GPU_ids = '0:1'
+GPU_ids = args['gpu']
 NUM_MPI = 3   # At least 3 if --split_random_halves is useds
 
 mk_dirs = True
-create_projs = True
-run_EM = True
-EVAL_DATA = False
+create_projs = int(args['projs'])
+run_EM = int(args['em'])
+EVAL_DATA = int(args['eval'])
+PDB_FOLDER = args['pdb-folder'].split(' ')
 START_MOL = 0
 END_MOL = 15
 
-noise_level = ['01', '02']
+noise_level = args['noise'].split(' ')
 
+EXT_RECO_MODE = args['ext']
+if EXT_RECO_MODE == 'def':
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = ''
+    print('EXT_RECO, should be empty: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])
+elif EXT_RECO_MODE == 'AR':
+    raise NotImplementedError
+elif EXT_RECO_MODE == 'RED':
+    raise NotImplementedError
 
-# Make sure we use the default ext. reco. program
-os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = ''
-
-base_path = '/local/scratch/public/sl767/MRC_Data'
+if platform.node() == 'radon':
+    BASE_PATH = '/mnt/datahd/zickert/MRC_Data'
 MPI_MODE = 'mpirun'
 
 
@@ -39,12 +63,10 @@ def find_PDB_ID(pattern, path):
                                "/"))[-8:-4])
     return result
 
-# train_path also contains phantoms used for eval, but projections,
-# recos et.c. for eval will be stored in location different from 
-# corresponding train files.
-train_path = base_path + '/org/training'
 
-out_path = base_path + '/Data/SimDataPaper/Data_0{N}_10k'
+ORG_PATH = BASE_PATH + '/converted/'
+
+out_path = BASE_PATH + '/Data/SimDataPaper/Data_0{N}_10k'
 
 if EVAL_DATA:
     out_path = out_path + '/eval'
@@ -52,12 +74,14 @@ else:
     out_path = out_path + '/train'
 
 PDB_ID = []
-for train_folder in [1, 2, 3]:
-    PDB_ID_tmp = find_PDB_ID('*.mrc', '{TrP}/{TrF}'.format(TrP=train_path,
-                             TrF=train_folder))
+for train_folder in PDB_FOLDER:
+    PDB_ID_tmp = find_PDB_ID('*.mrc', '{OrgP}/{Fol}'.format(OrgP=ORG_PATH,
+                             Fol=PDB_FOLDER))
     PDB_ID_tmp = PDB_ID_tmp[START_MOL: END_MOL]
     PDB_ID.extend(PDB_ID_tmp)
 
+if args['pdb-id'] is not '0':
+    PDB_ID = args['pdb-id']
 
 print('PDB ids: ', PDB_ID)
 print('Eval data: ', EVAL_DATA)
@@ -113,7 +137,8 @@ if run_EM:
             refine_cmd += ' --low_resol_join_halves 40'
             refine_cmd += ' --norm --scale'
             refine_cmd += ' --gpu "{GPU_ids}"'
-            refine_cmd += ' --external_reconstruct'
+            if EXT_RECO_MODE is not '0':
+                refine_cmd += ' --external_reconstruct'
 #--maximum_angular_sampling 1.8'
             refine_cmd += ' --j 6' # Number of threads to run in parallel (only useful on multi-core machines)
             refine_cmd += ' --pool 30' # Number of images to pool for each thread task

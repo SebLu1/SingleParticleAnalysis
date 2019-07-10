@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# first argument is noise level, second regularization parameter
+reconstruct () {
+    export RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION=$2
+    python /home/zickert/SingleParticleAnalysis/LowPassIni/run_relion_stuff $1 '5A0M' "AR" $2
+}
+
+reconstruct "01" ".005"
+reconstruct "01" ".003"
+
+reconstruct "012" ".01"
+reconstruct "012" ".0075"
+
+reconstruct "016" ".015"
+reconstruct "016" ".025"
+
+reconstruct "02" ".03"
+reconstruct "02" ".05"
