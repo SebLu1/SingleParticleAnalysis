@@ -64,7 +64,7 @@ def find_PDB_ID(pattern, path):
     return result
 
 
-ORG_PATH = BASE_PATH + '/converted/'
+ORG_PATH = BASE_PATH + '/converted'
 
 out_path = BASE_PATH + '/Data/SimDataPaper/Data_0{N}_10k'
 
@@ -74,11 +74,12 @@ else:
     out_path = out_path + '/train'
 
 PDB_ID = []
-for train_folder in PDB_FOLDER:
+for folder in PDB_FOLDER:
     PDB_ID_tmp = find_PDB_ID('*.mrc', '{OrgP}/{Fol}'.format(OrgP=ORG_PATH,
-                             Fol=PDB_FOLDER))
+                             Fol=folder))
     PDB_ID_tmp = PDB_ID_tmp[START_MOL: END_MOL]
     PDB_ID.extend(PDB_ID_tmp)
+print(PDB_ID)
 
 if args['pdb_id'] is not '0':
     PDB_ID = args['pdb_id']
