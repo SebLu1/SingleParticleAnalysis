@@ -27,6 +27,12 @@ parser.add_argument('--ext', help='Which exernal reco? (0, def, AR, RED)',
                     required=True)
 args = vars(parser.parse_args())
 
+os.environ['MPI_DIR'] = '/usr/local/openmpi'
+os.environ['PATH'] = '/usr/local/openmpi/bin:' + os.environ['PATH']
+os.environ['LD_LIBRARY_PATH'] = '/usr/local/openmpi/lib:' + os.environ['LD_LIBRARY_PATH']
+
+
+
 GPU_ids = args['gpu']
 print(GPU_ids)
 
