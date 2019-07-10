@@ -27,15 +27,6 @@ parser.add_argument('--ext', help='Which exernal reco? (0, def, AR, RED)',
                     required=True)
 args = vars(parser.parse_args())
 
-os.environ['MPI_DIR'] = '/usr/local/openmpi'
-os.environ['PATH'] = '/usr/local/openmpi/bin:' + os.environ['PATH']
-if 'LD_LIBRARY_PATH' in os.environ:
-    os.environ['LD_LIBRARY_PATH'] = '/usr/local/openmpi/lib:' + os.environ['LD_LIBRARY_PATH']
-else:
-    os.environ['LD_LIBRARY_PATH'] = '/usr/local/openmpi/lib'
-print(os.environ['MPI_DIR'])
-
-
 
 GPU_ids = args['gpu']
 print(GPU_ids)
@@ -54,8 +45,8 @@ noise_level = args['noise'].split(' ')
 
 EXT_RECO_MODE = args['ext']
 if EXT_RECO_MODE == 'def':
-    os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = ''
-    print('EXT_RECO, should be empty: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = 'relion_external_reconstruct' # Default
+    print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])
 elif EXT_RECO_MODE == 'AR':
     raise NotImplementedError
 elif EXT_RECO_MODE == 'RED':
@@ -103,7 +94,7 @@ if args['pdb_id'] is not '0':
 
 print('PDB ids: ', PDB_ID)
 print('Eval data: ', EVAL_DATA)
-input("Looks alright?")
+#input("Looks alright?")
 
 if mk_dirs:
     for p in PDB_ID:

@@ -4,3 +4,4 @@
 *.pyc
 .ipynb_checkpoints/
 .spi
+LowPassIni/log*.txt
