@@ -29,7 +29,11 @@ args = vars(parser.parse_args())
 
 os.environ['MPI_DIR'] = '/usr/local/openmpi'
 os.environ['PATH'] = '/usr/local/openmpi/bin:' + os.environ['PATH']
-os.environ['LD_LIBRARY_PATH'] = '/usr/local/openmpi/lib:' + os.environ['LD_LIBRARY_PATH']
+if 'LD_LIBRARY_PATH' in os.environ:
+    os.environ['LD_LIBRARY_PATH'] = '/usr/local/openmpi/lib:' + os.environ['LD_LIBRARY_PATH']
+else:
+    os.environ['LD_LIBRARY_PATH'] = '/usr/local/openmpi/lib'
+print(os.environ['MPI_DIR'])
 
 
 
