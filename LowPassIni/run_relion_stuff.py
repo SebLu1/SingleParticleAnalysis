@@ -102,9 +102,9 @@ if create_projs:
     # Scale phantoms
     for p in PDB_ID:
         for n in noise_level:
-            mult_cmd = 'relion_image_handler --i {TP}/{p1}/{p}.mrc --multiply_constant 0.{n}'
+            mult_cmd = 'relion_image_handler --i {OrgP}/{p1}/{p}.mrc --multiply_constant 0.{n}'
             mult_cmd += ' --o {OP}/mult_maps/{p}/{p}_mult0{n}.mrc'
-            mult_cmd = mult_cmd.format(TP=train_path, OP=out_path, p=p, p1=p[0], n=n)
+            mult_cmd = mult_cmd.format(OrgP=ORG_PATH, OP=out_path, p=p, p1=p[0], n=n)
             runCommand(mult_cmd.format(N=n))
     # Create noisy projections
     for p in PDB_ID:
