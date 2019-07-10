@@ -28,6 +28,8 @@ parser.add_argument('--ext', help='Which exernal reco? (0, def, AR, RED)',
 args = vars(parser.parse_args())
 
 GPU_ids = args['gpu']
+print(GPU_ids)
+
 NUM_MPI = 3   # At least 3 if --split_random_halves is useds
 
 mk_dirs = True
@@ -142,7 +144,7 @@ if run_EM:
             refine_cmd += ' --offset_step 2 --sym C1'
             refine_cmd += ' --low_resol_join_halves 40'
             refine_cmd += ' --norm --scale'
-            refine_cmd += ' --gpu "{GPU_ids}"'
+            refine_cmd += ' --gpu {GPU_ids}'
             if EXT_RECO_MODE is not '0':
                 refine_cmd += ' --external_reconstruct'
 #--maximum_angular_sampling 1.8'

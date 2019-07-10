@@ -1,19 +1,7 @@
 #!/bin/bash
+source activate tf36
 
-# first argument is noise level, second regularization parameter
-reconstruct () {
-    export RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION=$2
-    python /home/zickert/SingleParticleAnalysis/LowPassIni/run_relion_stuff $1 '5A0M' "AR" $2
-}
+python run_relion_stuff.py --projs 1 --em 1 --gpu 0:1 --pdb_folder 1 --pdb_id 0 --noise "01 02" --ext 0 --eval 0 --pdb_start_idx 0 --pdb_end_idx 15
+python run_relion_stuff.py --projs 1 --em 1 --gpu 0:1 --pdb_folder 2 --pdb_id 0 --noise "01 02" --ext 0 --eval 0 --pdb_start_idx 0 --pdb_end_idx 15
+python run_relion_stuff.py --projs 1 --em 1 --gpu 0:1 --pdb_folder 3 --pdb_id 0 --noise "01 02" --ext 0 --eval 0 --pdb_start_idx 0 --pdb_end_idx 15
 
-reconstruct "01" ".005"
-reconstruct "01" ".003"
-
-reconstruct "012" ".01"
-reconstruct "012" ".0075"
-
-reconstruct "016" ".015"
-reconstruct "016" ".025"
-
-reconstruct "02" ".03"
-reconstruct "02" ".05"
