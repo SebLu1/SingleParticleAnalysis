@@ -25,6 +25,8 @@ parser.add_argument('--noise', help='Noise levels',
                     required=True)
 parser.add_argument('--ext', help='Which exernal reco? (0, def, def_pos, AR, AR_pos, RED)',
                     required=True)
+parser.add_argument('--mask', help='Use mask and solvent_correct_fsc?',
+                    required=True)
 args = vars(parser.parse_args())
 
 if platform.node() == 'radon':
@@ -42,10 +44,15 @@ EVAL_DATA = int(args['eval'])
 PDB_FOLDER = args['pdb_folder'].split(' ')
 START_MOL = int(args['pdb_start_idx'])
 END_MOL = int(args['pdb_end_idx'])
+MASK = int(args['mask'])
 
 noise_level = args['noise'].split(' ')
 
 EXT_RECO_MODE = args['ext']
+if EXT_RECO_MODE == '0':
+    METHOD = 'EM'
+else:
+    METHOD = EXT_RECO_MODE
 if EXT_RECO_MODE == 'def':
     os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = 'relion_external_reconstruct' # Default
     print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])
@@ -108,7 +115,12 @@ if mk_dirs:
             runCommand('mkdir -p {OP}/mult_maps/{p}'.format(OP=out_path, p=p).format(N=n))
             runCommand('mkdir -p {OP}/projs/{p}'.format(OP=out_path, p=p).format(N=n))
 #            runCommand('mkdir -p {OP}/SGD/{p}'.format(OP=out_path, p=p).format(N=n))
-            runCommand('mkdir -p {OP}/EM/{p}'.format(OP=out_path, p=p).format(N=n))
+#            runCommand('mkdir -p {OP}/EM/{p}'.format(OP=out_path, p=p).format(N=n))
+            if MASK:
+                runCommand('mkdir -p {OP}/{meth}_masked/{p}'.format(OP=out_path, p=p, meth=METHOD).format(N=n))
+                runCommand('mkdir -p {OP}/masks/{p}'.format(OP=out_path, p=p).format(N=n))
+            else:
+                runCommand('mkdir -p {OP}/{meth}/{p}'.format(OP=out_path, p=p, meth=METHOD).format(N=n))
 #            runCommand('mkdir -p {OP}/LowPass/{p}'.format(OP=out_path, p=p).format(N=n))
         
 if create_projs:
@@ -131,6 +143,13 @@ if create_projs:
 if run_EM:
     for p in PDB_ID:
         for n in noise_level:
+            if MASK:
+                mask_cmd = 'relion_mask_create --i {OrgP}/{p1}/{p}.mrc'
+                mask_cmd += ' --o {OP}/masks/{p}/mask.mrc'
+                mask_cmd += ' --ini_threshold 0.175 --extend_inimask 0 --width_soft_edge 5 --lowpass 30 --angpix 1.5'
+                mask_cmd = mask_cmd.format(OrgP=ORG_PATH, OP=out_path, p=p, p1=p[0], n=n)
+                print(mask_cmd)
+                runCommand(mask_cmd.format(N=n))
             if MPI_MODE == 'mpirun':
                 refine_cmd = 'mpirun -n {NUM_MPI} relion_refine_mpi'
             elif MPI_MODE == 'srun':
@@ -139,7 +158,11 @@ if run_EM:
                 refine_cmd = 'mpirun relion_refine_mpi'
             else:
                 raise Exception 
-            refine_cmd += ' --o {OP}/EM/{p}/{p}_mult0{n}'
+            if MASK:
+                refine_cmd += ' --solvent_mask {OP}/masks/{p}/mask.mrc --solvent_correct_fsc'
+                refine_cmd += ' --o {OP}/{meth}_masked/{p}/{p}_mult0{n}'
+            else:
+                refine_cmd += ' --o {OP}/{meth}/{p}/{p}_mult0{n}'
             refine_cmd += ' --auto_refine --split_random_halves'
             refine_cmd += ' --i {OP}/projs/{p}/{p}_mult0{n}.star'
             refine_cmd += ' --ref {OP}/mult_maps/{p}/{p}_mult0{n}.mrc' 
@@ -163,5 +186,5 @@ if run_EM:
 #            refine_cmd += ' --iter 30'
 #            refine_cmd += ' --preread_images' #  Use this to let the master process read all particles into memory.
                                                #  Be careful you have enough RAM for large data sets!
-            refine_cmd = refine_cmd.format(OP=out_path, p=p, n=n, GPU_ids=GPU_ids, NUM_MPI=NUM_MPI)
+            refine_cmd = refine_cmd.format(OP=out_path, p=p, n=n, GPU_ids=GPU_ids, NUM_MPI=NUM_MPI, meth=METHOD)
             runCommand(refine_cmd.format(N=n)) 
