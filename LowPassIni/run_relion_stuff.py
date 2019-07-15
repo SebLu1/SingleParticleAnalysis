@@ -23,10 +23,12 @@ parser.add_argument('--pdb_id', help='PDB ID (if none, give 0)',
                     required=True)
 parser.add_argument('--noise', help='Noise levels',
                     required=True)
-parser.add_argument('--ext', help='Which exernal reco? (0, def, AR, RED)',
+parser.add_argument('--ext', help='Which exernal reco? (0, def, def_pos, AR, AR_pos, RED)',
                     required=True)
 args = vars(parser.parse_args())
 
+if platform.node() == 'radon':
+    BASE_PATH = '/home/zickert/'
 
 GPU_ids = args['gpu']
 print(GPU_ids)
@@ -47,6 +49,9 @@ EXT_RECO_MODE = args['ext']
 if EXT_RECO_MODE == 'def':
     os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = 'relion_external_reconstruct' # Default
     print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])
+if EXT_RECO_MODE == 'def_pos':
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = BASE_PATH + 'SingleParticleAnalysis/LowPassIni/ext_reconstruct_CLASSICAL_positivity.py' # 
+    print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])    
 elif EXT_RECO_MODE == 'AR':
     raise NotImplementedError
 elif EXT_RECO_MODE == 'RED':
@@ -90,8 +95,9 @@ for folder in PDB_FOLDER:
                              Fol=folder))
 
 if args['pdb_id'] is not '0':
-    PDB_ID = args['pdb_id']
+    PDB_ID = [args['pdb_id']]
 
+    
 print('PDB ids: ', PDB_ID)
 print('Eval data: ', EVAL_DATA)
 #input("Looks alright?")
@@ -101,9 +107,9 @@ if mk_dirs:
         for n in noise_level:
             runCommand('mkdir -p {OP}/mult_maps/{p}'.format(OP=out_path, p=p).format(N=n))
             runCommand('mkdir -p {OP}/projs/{p}'.format(OP=out_path, p=p).format(N=n))
-            runCommand('mkdir -p {OP}/SGD/{p}'.format(OP=out_path, p=p).format(N=n))
+#            runCommand('mkdir -p {OP}/SGD/{p}'.format(OP=out_path, p=p).format(N=n))
             runCommand('mkdir -p {OP}/EM/{p}'.format(OP=out_path, p=p).format(N=n))
-            runCommand('mkdir -p {OP}/LowPass/{p}'.format(OP=out_path, p=p).format(N=n))
+#            runCommand('mkdir -p {OP}/LowPass/{p}'.format(OP=out_path, p=p).format(N=n))
         
 if create_projs:
     # Scale phantoms

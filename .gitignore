@@ -5,3 +5,4 @@
 .ipynb_checkpoints/
 .spi
 LowPassIni/log*.txt
+LowPassIni/gen*.txt
