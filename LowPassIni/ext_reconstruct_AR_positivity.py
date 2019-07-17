@@ -48,7 +48,7 @@ if PLATFORM_NODE == 'motel':
     SAVES_PATH += 'Adversarial_Regulariser/Cutoff_20/Roto-Translation_Augmentation'
 elif PLATFORM_NODE == 'radon':
     SAVES_PATH = '/mnt/datahd/zickert/SPA/Saves/SimDataPaper/'
-    SAVES_PATH += 'Adversarial_Regulariser/Cutoff_20/Roto-Translation_Augmentation'    
+    SAVES_PATH += 'Adversarial_Regulariser/trained_on_SGD/Cutoff_20/Roto-Translation_Augmentation'   
 
 
 iteration = ''
