@@ -12,6 +12,8 @@ if PLATFORM_NODE == 'motel':
     BASE_PATH = '/local/scratch/public/sl767/MRC_Data/'
 elif PLATFORM_NODE == 'gelfand':
     BASE_PATH = '/mnt/data/zickert/MRC_Data/'
+elif PLATFORM_NODE == 'radon':
+    BASE_PATH = '/mnt/datahd/zickert/MRC_Data/'    
 DATA_PATH = BASE_PATH + 'Data/'
 GT_PATH = BASE_PATH + 'org/'
 

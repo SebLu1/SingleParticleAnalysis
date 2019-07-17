@@ -1,3 +1,5 @@
+#!/home/zickert/miniconda3/envs/tensorflow_gpu/bin/python
+
 import numpy as np
 import mrcfile
 import platform

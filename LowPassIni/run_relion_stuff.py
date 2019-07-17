@@ -31,7 +31,14 @@ parser.add_argument('--reg_par', help='AR reg. parameter')
 #                    ,required=True)
 parser.add_argument('--num_mpi', help='MPI nodes',
                     required=True)
+parser.add_argument('--gt_start', help='start at GT (no low-pass)')
 args = vars(parser.parse_args())
+
+if args['gt_start'] is not None:
+    GT_START = int(args['gt_start'])
+else:
+    GT_START = 0
+
 
 if platform.node() == 'radon':
     CODE_PATH = '/home/zickert/'
@@ -59,7 +66,7 @@ if EXT_RECO_MODE == '0':
 else:
     if EXT_RECO_MODE == 'AR' or EXT_RECO_MODE == 'AR_pos':
         if 'reg_par' in args:
-            REG_PAR = float(args['reg_par'])
+            REG_PAR = args['reg_par']
         else:
             raise Exception
         METHOD = EXT_RECO_MODE + '_' + args['reg_par']
@@ -76,7 +83,7 @@ elif EXT_RECO_MODE == 'AR':
     print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])
     os.environ['RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION'] = REG_PAR
 elif EXT_RECO_MODE == 'AR_pos':
-    os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = CODE_PATH + 'SingleParticleAnalysis/LowPassIni/ext_reconstruct_AR_positive.py'
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = CODE_PATH + 'SingleParticleAnalysis/LowPassIni/ext_reconstruct_AR_positivity.py'
     print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])
     os.environ['RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION'] = REG_PAR
 elif EXT_RECO_MODE == 'RED':
@@ -85,8 +92,9 @@ elif EXT_RECO_MODE == 'naive_den':
     raise NotImplementedError
                 
                     
-if platform.node() == 'radon':
-    BASE_PATH = '/mnt/datahd/zickert/MRC_Data'
+#if platform.node() == 'radon':
+#    BASE_PATH = '/mnt/datahd/zickert/MRC_Data'
+BASE_PATH = '.' #  Now care must be taken w.r.t. where to run 
 MPI_MODE = 'mpirun'
 
 
@@ -137,7 +145,7 @@ if args['pdb_id'] is not '0':
     
 print('PDB ids: ', PDB_ID)
 print('Eval data: ', EVAL_DATA)
-input("Looks alright?")
+#input("Looks alright?")
 
 if mk_dirs:
     for p in PDB_ID:
@@ -157,7 +165,9 @@ if create_projs:
     # Scale phantoms
     for p in PDB_ID:
         for n in noise_level:
+#            print('{OP}/mult_maps/{p}/{p}_mult0{n}.mrc'.format(OP=out_path, p=p, n=n).format(N=n))
             if not os.path.isfile('{OP}/mult_maps/{p}/{p}_mult0{n}.mrc'.format(OP=out_path, p=p, n=n).format(N=n)):
+#                raise Exception
                 mult_cmd = 'relion_image_handler --i {OrgP}/{p1}/{p}.mrc --multiply_constant 0.{n}'
                 mult_cmd += ' --o {OP}/mult_maps/{p}/{p}_mult0{n}.mrc'
                 mult_cmd = mult_cmd.format(OrgP=ORG_PATH, OP=out_path, p=p, p1=p[0], n=n)
@@ -165,7 +175,9 @@ if create_projs:
     # Create noisy projections
     for p in PDB_ID:
         for n in noise_level:
+#            print('{OP}/projs/{p}/{p}_mult0{n}.mrcs'.format(OP=out_path, p=p, n=n).format(N=n))
             if not os.path.isfile('{OP}/projs/{p}/{p}_mult0{n}.mrcs'.format(OP=out_path, p=p, n=n).format(N=n)):
+#                raise Exception
                 proj_cmd = 'relion_project --i {OP}/mult_maps/{p}/{p}_mult0{n}.mrc'
                 proj_cmd += ' --o {OP}/projs/{p}/{p}_mult0{n} --nr_uniform 10000'
                 proj_cmd += ' --sigma_offset 2 --add_noise --white_noise 1' 
@@ -176,16 +188,19 @@ if run_EM:
     for p in PDB_ID:
         for n in noise_level:
             if MASK:
-                    check_path = '{OP}/{meth}_masked/{p}/{p}_mult0{n}.mrc'.format(OP=out_path, p=p, n=n, meth=METHOD).format(N=n)
+                check_path = '{OP}/{meth}_masked/{p}/{p}_mult0{n}_class001.mrc'.format(OP=out_path, p=p, n=n, meth=METHOD).format(N=n)
             else:
-                    check_path = '{OP}/{meth}/{p}/{p}_mult0{n}.mrc'.format(OP=out_path, p=p, n=n, meth=METHOD).format(N=n)
+                check_path = '{OP}/{meth}/{p}/{p}_mult0{n}_class001.mrc'.format(OP=out_path, p=p, n=n, meth=METHOD).format(N=n)
+#            print(check_path)
             if not os.path.isfile(check_path):
+                print('Running refinement for: ' + p)
+#                raise Exception
                 if MASK:
                     mask_cmd = 'relion_mask_create --i {OrgP}/{p1}/{p}.mrc'
                     mask_cmd += ' --o {OP}/masks/{p}/mask.mrc'
                     mask_cmd += ' --ini_threshold 0.175 --extend_inimask 0 --width_soft_edge 5 --lowpass 30 --angpix 1.5'
                     mask_cmd = mask_cmd.format(OrgP=ORG_PATH, OP=out_path, p=p, p1=p[0], n=n)
-                    print(mask_cmd)
+#                    print(mask_cmd)
                     runCommand(mask_cmd.format(N=n))
                 if MPI_MODE == 'mpirun':
                     refine_cmd = 'mpirun -n {NUM_MPI} relion_refine_mpi'
@@ -202,8 +217,15 @@ if run_EM:
                     refine_cmd += ' --o {OP}/{meth}/{p}/{p}_mult0{n}'
                 refine_cmd += ' --auto_refine --split_random_halves'
                 refine_cmd += ' --i {OP}/projs/{p}/{p}_mult0{n}.star'
-                refine_cmd += ' --ref {OP}/mult_maps/{p}/{p}_mult0{n}.mrc' 
-                refine_cmd += ' --ini_high 30'
+                refine_cmd += ' --ref {OP}/mult_maps/{p}/{p}_mult0{n}.mrc'
+                if not GT_START:
+#                    print('good')
+#                    raise Exception
+                    refine_cmd += ' --ini_high 30'
+                else:
+                    print('#################################')
+                    print('STARTING AT GROUND TRUTH')
+                    print('#################################')
                 refine_cmd += ' --pad 1'
                 refine_cmd += ' --particle_diameter 150 --flatten_solvent --zero_mask --oversampling 1'
                 refine_cmd += ' --healpix_order 2 --offset_range 5'
@@ -221,7 +243,7 @@ if run_EM:
                                                                   # instead of writing large files to disc
     #            refine_cmd += ' --auto_iter_max 1'    
     #            refine_cmd += ' --iter 30'
-    #            refine_cmd += ' --preread_images' #  Use this to let the master process read all particles into memory.
+                refine_cmd += ' --preread_images' #  Use this to let the master process read all particles into memory.
                                                    #  Be careful you have enough RAM for large data sets!
                 refine_cmd = refine_cmd.format(OP=out_path, p=p, n=n, GPU_ids=GPU_ids, NUM_MPI=NUM_MPI, meth=METHOD)
                 runCommand(refine_cmd.format(N=n)) 

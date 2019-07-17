@@ -1,3 +1,4 @@
+import argparse
 import platform
 PLATFORM_NODE = platform.node()
 import sys
@@ -10,11 +11,20 @@ from ClassFiles.DataAugmentation import (interpolation, phase_augmentation,
                                         rotation_translation, positivity)
 from ClassFiles.DataGeneration import get_batch, get_dict
 
-SAVES_PATH = '/mnt/datahd/zickert/SPA/Saves/SimDataPaper/'
-SAVES_PATH += 'Adversarial_Regulariser/Cutoff_20/Roto-Translation_Augmentation'
 
-PAPER_DATA_PATH = '/local/scratch/public/sl767/MRC_Data/Data/SimDataPaper/'
-LOG_FILE_PATH = SAVES_PATH + '/train_eval_data_logfile.txt'
+parser = argparse.ArgumentParser(description='Run RELION stuff')
+parser.add_argument('--name', help='Save dir name', required=True)
+
+args = vars(parser.parse_args())
+
+if platform.node() == 'radon':
+    BASE_SAVES_PATH = '/mnt/datahd/zickert/SPA/Saves/SimDataPaper/'
+    DATA_PATH = '/mnt/datahd/zickert/MRC_Data/Data/SimDataPaper/'
+
+    
+SAVE_NAME = args['name']
+SAVES_PATH = BASE_SAVES_PATH + 'Adversarial_Regulariser/{}/Cutoff_20/Roto-Translation_Augmentation'.format(SAVE_NAME)
+LOG_FILE_PATH = SAVES_PATH + '/logfile.txt'
 
 
 BATCH_SIZE = 1
@@ -33,15 +43,15 @@ LMB = 10.0
 GAMMA = 5.0
 CUTOFF = 20.0
 
-TRAIN_NOISE_LEVELS = ['01', '02']
-TRAIN_METHODS = ['EM', 'SGD']
-EVAL_NOISE_LEVELS = ['01', '016']
-EVAL_METHODS = ['EM', 'SGD']
+TRAIN_NOISE_LEVELS = ['01']
+TRAIN_METHODS = ['EM']
+EVAL_NOISE_LEVELS = ['01']
+EVAL_METHODS = ['EM']
 
 TRAIN_DICT = get_dict(TRAIN_NOISE_LEVELS, TRAIN_METHODS, eval_data=False,
-                      data_path=PAPER_DATA_PATH)
+                      data_path=DATA_PATH)
 EVAL_DICT = get_dict(EVAL_NOISE_LEVELS, EVAL_METHODS, eval_data=True,
-                     data_path=PAPER_DATA_PATH)
+                     data_path=DATA_PATH)
 
 
 def data_augmentation(gt, adv):
