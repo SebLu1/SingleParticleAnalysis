@@ -13,9 +13,15 @@ if PLATFORM_NODE == 'motel':
 elif PLATFORM_NODE == 'gelfand':
     BASE_PATH = '/mnt/data/zickert/MRC_Data/'
 elif PLATFORM_NODE == 'radon':
-    BASE_PATH = '/mnt/datahd/zickert/MRC_Data/'    
+    BASE_PATH = '/mnt/datahd/zickert/MRC_Data/'
+elif 'lmb' in PLATFORM_NODE:
+    BASE_PATH = '/beegfs3/zickert/PDB2MRC/'
+    GT_PATH_TRAIN = '/beegfs3/scheres/PDB2MRC/Data/SimDataPaper/Data_001_10k/train/mult_maps'
+    GT_PATH_EVAL = '/beegfs3/scheres/PDB2MRC/Data/SimDataPaper/Data_001_10k/eval/mult_maps'
+else:
+    raise Exception
 DATA_PATH = BASE_PATH + 'Data/'
-GT_PATH = BASE_PATH + 'org/'
+#GT_PATH = BASE_PATH + 'org/'
 
 def l2(vector):
     return np.sqrt(np.sum(np.square(np.abs(vector))))
@@ -64,6 +70,13 @@ def getRecos(noise, method, iter='Final', eval_data=False,
             path_list = find('*it300_class001.mrc', folder)
         elif iter == 'All':
             path_list = find('*it*_class001.mrc', folder)
+    elif method == 'def_masked':
+        folder += 'def_masked'
+        if iter == 'Final':
+            path_list = find('*mult0{}_class001.mrc'.format(noise), folder)
+        elif iter == 'All':
+            path_list = find('*mult0{}_class001.mrc'.format(noise), folder)
+            path_list += find('*it*_class001.mrc', folder)
     return path_list
 
 
@@ -93,10 +106,13 @@ def normalize_tf(tensor):
     return tf.div(tensor, norms_exp)
 
 
-def normalize_np(tensor):
+def normalize_np(tensor, return_norm=False):
     norms = np.sqrt(np.sum(np.square(tensor), axis=(1,2,3)))
     norms_exp = np.expand_dims(np.expand_dims(np.expand_dims(norms, axis=1), axis=1), axis=1)
-    return np.divide(tensor, norms_exp)
+    if return_norm:
+        return norms, np.divide(tensor, norms_exp)
+    else:
+        return np.divide(tensor, norms_exp)
 
 
 def find(pattern, path):
@@ -107,16 +123,26 @@ def find(pattern, path):
                 result.append(os.path.join(root, name).replace("\\", "/"))
     return result
 
-def locate_gt(path, full_path=True):
+def locate_gt(path, full_path=True, eval_data=False):
     """filename in path should start with pdb_id"""
+#    print('path', path)
+#    print('full_path', full_path)
+#    print('eval_data', eval_data)
     if full_path:
         pdb_id = path.split('/')[-1][:4]
     else:
         pdb_id = path
-    L = find('*' + pdb_id + '.mrc', GT_PATH)
+#    print('pdb_id', pdb_id)
+    if eval_data:
+        L = find('*' + pdb_id + '_mult001.mrc', GT_PATH_EVAL)
+    
+    else:
+        L = find('*' + pdb_id + '_mult001.mrc', GT_PATH_TRAIN)    
     if not len(L) == 1:
         raise ValueError('non-unique pdb id: ' + str(L))
     else:
+#        print(L)
+#        raise Exception
         return L[0]
 
 def create_single_folder(folder):

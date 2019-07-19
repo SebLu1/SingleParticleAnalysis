@@ -31,7 +31,7 @@ def phase_augmentation(gt, adv):
 
 
 ROTATION_STD = 20
-TRANSLATION_MAX = 0.2
+TRANSLATION_MAX = 0.1 # 0.2
 
 
 def rotation_translation(gt, adv, translation_max = TRANSLATION_MAX):

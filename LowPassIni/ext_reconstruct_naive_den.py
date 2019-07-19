@@ -14,7 +14,7 @@ elif 'lmb' in PLATFORM_NODE:
 else:
     raise Exception
 from ClassFiles.relion_fixed_it import load_star
-from ClassFiles.AdversarialRegularizer import AdversarialRegulariser
+from ClassFiles.Denoiser import Denoiser
 from ClassFiles.ut import irfft, rfft
 import os
 import subprocess as sp
@@ -29,8 +29,9 @@ def runCommand(cmd_string, shell=False):
 
 INI_POINT = os.environ["RELION_EXTERNAL_RECONSTRUCT_AR_INI_POINT"]
 REGULARIZATION_TY = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REG_TIK"])
-ADVERSARIAL_REGULARIZATION = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"])
+#ADVERSARIAL_REGULARIZATION = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"])
 SAVES_PATH = os.environ['RELION_EXTERNAL_RECONSTRUCT_NET_PATH']
+NORMALIZATION = os.environ['RELION_EXTERNAL_RECONSTRUCT_NORMALIZATION']
 
 if INI_POINT == 'classical':
     print('Running classical RELION M-step...')
@@ -49,7 +50,7 @@ if INI_POINT == 'classical':
 
 
 
-print('ADVERSARIAL_REGULARIZATION: ' + str(ADVERSARIAL_REGULARIZATION))
+#print('ADVERSARIAL_REGULARIZATION: ' + str(ADVERSARIAL_REGULARIZATION))
 
 
 
@@ -70,7 +71,7 @@ for det in l:
         
 print('Iteration: {}'.format(iteration))
     
-print('Regularization: ' + str(ADVERSARIAL_REGULARIZATION))
+#print('Regularization: ' + str(ADVERSARIAL_REGULARIZATION))
 
 star_file = load_star(star_path)
 
@@ -97,35 +98,18 @@ elif INI_POINT == 'tik':
 reco = np.fft.rfftn(np.maximum(0, np.fft.irfftn(reco)))
 
 
-regularizer = AdversarialRegulariser(SAVES_PATH)
+denoiser = Denoiser(SAVES_PATH, normalize=NORMALIZATION)
 
-precond = np.abs(np.divide(1, tikhonov_kernel))
-precond /= precond.max()
+with mrcfile.open(target_path) as mrc:
+    reco = mrc.data.copy()
 
-# The scales produce gradients of order 1
-ADVERSARIAL_SCALE = (96 ** (-0.5))
-DATA_SCALE = 1 / (10 * 96 ** 3)
+rel_reco_norm = np.sum(np.abs(reco))    
 
-#IMAGING_SCALE=96
+denoised = denoiser.evaluate(reco)
+den_norm = np.sum(np.abs(denoised))
 
-for k in range(70):
-    STEP_SIZE = 1.0 * 1 / np.sqrt(1 + k / 20)
-    
-    gradient = regularizer.evaluate(reco)
-    g1 = ADVERSARIAL_REGULARIZATION * gradient * ADVERSARIAL_SCALE
-#     print(l2(gradient))
-    g2 = DATA_SCALE*(np.multiply(reco, tikhonov_kernel) - complex_data)
-    
-    g = g1 + g2
-#     reco = reco - STEP_SIZE * 0.02 * g
-    reco = reco - STEP_SIZE * precond * g
-    
-    reco = np.fft.rfftn(np.maximum(0, np.fft.irfftn(reco)))
-
-# write final reconstruction to file
-reco_real = irfft(reco)
-
+#denoised *= rel_reco_norm/den_norm
 
 with mrcfile.new(target_path, overwrite=True) as mrc:
-    mrc.set_data(reco_real.astype(np.float32))
+    mrc.set_data(denoised.astype(np.float32))
     mrc.voxel_size = 1.5

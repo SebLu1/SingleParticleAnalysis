@@ -1,0 +1,23 @@
+#18/7 at  ~ 14:20 UK TIME:
+
+#python Training_AR.py --name 600_data --gpu 0 --s 1.0 --lr 0.00005 &
+#python Training_AR.py --name 600_data --gpu 1 --s 0.0 --lr 0.00005 &
+#python Training_DEN.py --name 600_data --gpu 2 --s 0.0 --lr 0.00001 --aug 1 &
+#python Training_DEN.py --name 600_data --gpu 3 --s 0.0 --lr 0.00001 --aug 0 &
+
+#18/7 at  ~ 18:00 UK TIME:
+#AR is normed in the naive way without noise lvl
+#DEN is not normed
+#Test method uses data aug, bit weird
+
+
+#python Training_AR.py --name 600_data --gpu 0 --s 1.0 --lr 0.00005 &
+#python Training_AR.py --name 600_data --gpu 1 --s 0.0 --lr 0.00005 &
+#python Training_DEN.py --name 600_data --gpu 2 --s 0.0 --lr 0.00001 --aug 1 &
+#python Training_DEN.py --name 600_data --gpu 3 --s 0.0 --lr 0.00001 --aug 0 &
+
+#19/7 at  ~ 10:30 UK TIME: Use lower LR for denoiser
+#python Training_AR.py --name 600_data --gpu 0 --s 1.0 --lr 0.00005 &
+#python Training_AR.py --name 600_data --gpu 1 --s 0.0 --lr 0.00005 &
+python Training_DEN.py --name 600_data --gpu 2 --s 0.0 --lr 0.000003 --aug 1 &
+python Training_DEN.py --name 600_data --gpu 3 --s 0.0 --lr 0.000003 --aug 0 &

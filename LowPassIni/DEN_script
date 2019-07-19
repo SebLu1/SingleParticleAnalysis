@@ -1,0 +1,18 @@
+# use eval 0 since data was generated this way, thus file paths in star files in projs are with train
+
+#bash
+#conda activate tensorflow_gpu
+
+run_DEN () {
+python /lmb/home/schools1/SingleParticleAnalysis/LowPassIni/run_relion_stuff.py --pdb_id $1 --normalize $2 --tik_reg $3 --net_path $4 --ini_pt $5 --gpu $6 --projs 0 --em 1 --eval 0 --pdb_folder 0 --pdb_start_idx 0 --pdb_end_idx 0 --noise 01 --ext naive_den --mask 1 --num_mpi 3
+}
+
+DEN_normalize_0_s_0_aug_1="/beegfs3/zickert/Saves/SimDataPaper/Denoiser/600_data_lr_0.00001_s_0.0_aug_1"
+PDB_ID="4M82"
+
+
+
+# fmg32 19/7 16:25
+#run_DEN $PDB_ID NO 1000000 $DEN_normalize_0_s_0_aug_1 "tik" "2:3" #>> 0.0.txt & 
+run_DEN $PDB_ID NO 1000000 $DEN_normalize_0_s_0_aug_1 "classical" "2:3" # >> 0.2.txt &
+

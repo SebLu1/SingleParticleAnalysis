@@ -32,19 +32,31 @@ parser.add_argument('--reg_par', help='AR reg. parameter')
 parser.add_argument('--num_mpi', help='MPI nodes',
                     required=True)
 parser.add_argument('--gt_start', help='start at GT (no low-pass)')
+parser.add_argument('--normalize', help='What normalization was network trained with?')
+parser.add_argument('--ini_pt', help='Initial point for AR gradient descent')
+parser.add_argument('--tik_reg', help='Tikhononv constant for')
+parser.add_argument('--net_path', help='Path to network')
 args = vars(parser.parse_args())
+
+print(args)
+#raise Exception
 
 if args['gt_start'] is not None:
     GT_START = int(args['gt_start'])
 else:
     GT_START = 0
 
-
-if platform.node() == 'radon':
+PLATFORM_NODE = platform.node()
+if PLATFORM_NODE == 'radon':
     CODE_PATH = '/home/zickert/'
+elif 'lmb' in PLATFORM_NODE:
+    CODE_PATH = '/lmb/home/schools1/'
+else:
+    raise Exception      
 
 GPU_ids = args['gpu']
 print(GPU_ids)
+#os.environ['CUDA_VISIBLE_DEVICES'] = GPU_ids
 
 NUM_MPI = int(args['num_mpi'])   # At least 3 if --split_random_halves is useds
 
@@ -65,13 +77,47 @@ if EXT_RECO_MODE == '0':
     METHOD = 'EM'
 else:
     if EXT_RECO_MODE == 'AR' or EXT_RECO_MODE == 'AR_pos':
-        if 'reg_par' in args:
+        if args['reg_par'] is not None:
             REG_PAR = args['reg_par']
         else:
             raise Exception
-        METHOD = EXT_RECO_MODE + '_' + args['reg_par']
+        if args['ini_pt'] is not None:
+            INI_POINT = args['ini_pt']
+        else:
+            raise Exception
+        if args['tik_reg'] is not None:
+            TIK_REG = args['tik_reg']
+        else:
+            raise Exception
+        if args['net_path'] is not None:
+            NET_PATH = args['net_path']
+#            print('NET_PATH' + NET_PATH)
+#            raise Exception
+        else:
+            raise Exception                 
+        METHOD = EXT_RECO_MODE + '_REG_PAR_' + REG_PAR + '_TIK_REG_' + TIK_REG + '_INI_POINT_' + INI_POINT 
+    elif EXT_RECO_MODE == 'naive_den':
+        if args['ini_pt'] is not None:
+            INI_POINT = args['ini_pt']
+        else:
+            raise Exception
+        if args['tik_reg'] is not None:
+            TIK_REG = args['tik_reg']
+        else:
+            raise Exception
+        if args['net_path'] is not None:
+            NET_PATH = args['net_path']
+        else:
+            raise Exception
+        if args['normalize'] is not None:
+            NORMALIZE = args['normalize']
+        else:
+            raise Exception                     
+        METHOD = EXT_RECO_MODE + '_TIK_REG_' + TIK_REG + '_INI_POINT_' + INI_POINT + '_NORMALIZE_' + NORMALIZE 
+
     else:                    
         METHOD = EXT_RECO_MODE
+        
 if EXT_RECO_MODE == 'def':
     os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = 'relion_external_reconstruct' # Default
     print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])
@@ -79,6 +125,8 @@ if EXT_RECO_MODE == 'def_pos':
     os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = CODE_PATH + 'SingleParticleAnalysis/LowPassIni/ext_reconstruct_CLASSICAL_positivity.py' 
     print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])    
 elif EXT_RECO_MODE == 'AR':
+    # AR w/o positivity needs update
+    raise Exception
     os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = CODE_PATH + 'SingleParticleAnalysis/LowPassIni/ext_reconstruct_AR.py'
     print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])
     os.environ['RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION'] = REG_PAR
@@ -86,11 +134,19 @@ elif EXT_RECO_MODE == 'AR_pos':
     os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = CODE_PATH + 'SingleParticleAnalysis/LowPassIni/ext_reconstruct_AR_positivity.py'
     print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])
     os.environ['RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION'] = REG_PAR
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_REG_TIK'] = TIK_REG
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_AR_INI_POINT'] = INI_POINT
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_NET_PATH'] = NET_PATH    
 elif EXT_RECO_MODE == 'RED':
     raise NotImplementedError
 elif EXT_RECO_MODE == 'naive_den':
-    raise NotImplementedError
-                
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = CODE_PATH + 'SingleParticleAnalysis/LowPassIni/ext_reconstruct_naive_den.py'
+    print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])
+#    os.environ['RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION'] = REG_PAR
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_REG_TIK'] = TIK_REG
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_AR_INI_POINT'] = INI_POINT
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_NET_PATH'] = NET_PATH    
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_NORMALIZATION'] = NORMALIZE                   
                     
 #if platform.node() == 'radon':
 #    BASE_PATH = '/mnt/datahd/zickert/MRC_Data'

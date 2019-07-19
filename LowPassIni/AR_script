@@ -1,0 +1,17 @@
+# use eval 0 since data was generated this way, thus file paths in star files in projs are with train
+
+#bash
+#conda activate tensorflow_gpu
+
+run_AR () {
+python /lmb/home/schools1/SingleParticleAnalysis/LowPassIni/run_relion_stuff.py --pdb_id $1 --reg_par $2 --tik_reg $3 --net_path $4 --ini_pt $5 --gpu $6 --projs 0 --em 1 --eval 0 --pdb_folder 0 --pdb_start_idx 0 --pdb_end_idx 0 --noise 01 --ext AR_pos --mask 1 --num_mpi 3
+}
+
+AR_600_s_1="/beegfs3/zickert/Saves/SimDataPaper/Adversarial_Regulariser/600_data_lr_0.00005_s_1.0/Cutoff_20/Roto-Translation_Augmentation"
+PDB_ID="4M82"
+
+
+
+# fmg32 19/7 16:25
+run_AR $PDB_ID 0.2 1000000 "$AR_600_s_1" "classical" "0:1" #>> 0.0.txt & 
+#run_AR $PDB_ID 0.2 1000000 $AR_600_s_1.0 "tik" "2:3" >> 0.2.txt &

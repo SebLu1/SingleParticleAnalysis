@@ -9,18 +9,19 @@ IMAGE_SIZE = (None, 96, 96, 96, 1)
 FOURIER_SIZE = (None, 96, 96, 49, 1)
 # Weight on gradient regularization
 
-def data_augmentation_default(gt, adv):
+def data_augmentation_default(gt, adv):#, noise_lvl):
     return gt, adv
 
 
 class AdversarialRegulariser(object):
     # sets up the network architecture
-    def __init__(self, path, data_augmentation=data_augmentation_default, s=0.0, cutoff=20.0, gamma=1.0, lmb=10.0):
-
+    def __init__(self, path, data_augmentation=data_augmentation_default, s=0.0, cutoff=20.0, gamma=1.0, lmb=10.0, normalize='l2'):
+#        self.noise_lvl = 1.0 
         self.path = path
         self.network = ResNetClassifier()
         self.sess = tf.InteractiveSession()
         self.run_options = tf.RunOptions(report_tensor_allocations_upon_oom=True)
+        self.normalize = normalize
 
         ut.create_single_folder(self.path + '/Data')
         ut.create_single_folder(self.path + '/Logs')
@@ -35,11 +36,19 @@ class AdversarialRegulariser(object):
         self.learning_rate = tf.placeholder(dtype=tf.float32)
 
         # the network outputs
-        true, gen = data_augmentation(normalize_tf(self.true), normalize_tf(self.gen))
+        if self.normalize == 'l2':
 
-        # The normalized inputs after data augmentation
-        self.true_normed=normalize_tf(true)
-        self.gen_normed=normalize_tf(gen)
+            true, gen = data_augmentation(normalize_tf(self.true), normalize_tf(self.gen))
+            # The normalized inputs after data augmentation
+            self.true_normed = normalize_tf(true)
+            self.gen_normed = normalize_tf(gen)
+        else:
+            raise Exception
+            # Normalize using noise level
+            true, gen = data_augmentation(self.true, self.gen, self.noise_lvl)
+            self.true_normed = true
+            self.gen_normed = gen
+
         
         self.gen_was = self.network.net(self.gen_normed)
         self.data_was = self.network.net(self.true_normed)
@@ -91,7 +100,7 @@ class AdversarialRegulariser(object):
             with tf.name_scope('Slice_Projection'):
                 l.append(tf.summary.image('Adversarial', self.gen_normed[..., slice, :], max_outputs=1))
                 l.append(tf.summary.image('GroundTruth', self.true_normed[..., slice, :], max_outputs=1))
-                l.append(tf.summary.image('Gradient_Adv', self.gradient[..., slice, :],  max_outputs=1))
+                l.append(tf.summary.image('Gradient_Adv', self.gradient[..., slice, :], max_outputs=1))
                 l.append(tf.summary.image('Gradient_GT', gradient_track[..., slice, :], max_outputs=1))
 
             self.merged_network = tf.summary.merge(l)
@@ -107,35 +116,46 @@ class AdversarialRegulariser(object):
 
     # Bypassing data augmentation for evaluation
     def evaluate(self, fourierData):
+        #### ADD SCALING
         fourierData = ut.unify_form(fourierData)
         real_data = self.sess.run(self.real_data, feed_dict={self.fourier_data: fourierData})
-        normalized_data = normalize_np(real_data)
+        norm = 1.0
+        if self.normalize == 'l2':
+            norm, normalized_data = normalize_np(real_data, return_norm=True)
+        else:
+            normalized_data = real_data        
         grad = self.sess.run(self.gradient, feed_dict={self.gen_normed: normalized_data})
         USE_ADJOINT_IRFFT = False
         if USE_ADJOINT_IRFFT:
-            return ut.adjoint_irfft(grad[0,...,0])
+            return norm * ut.adjoint_irfft(grad[0,...,0])
         else:
-            return ut.rfft(grad[0,...,0])
+            return norm * ut.rfft(grad[0,...,0])
 
 
     def evaluate_real(self, real_data):
-        normalized_data = normalize_np(real_data)
+        norm = 1.0
+        if self.normalize == 'l2':
+            norm, normalized_data = normalize_np(real_data, return_norm=True)
+        else:
+            normalized_data = real_data            
         grad = self.sess.run(self.gradient, feed_dict={self.gen_normed: normalized_data})
-        return grad[0, ..., 0]
+        return norm * grad[0, ..., 0]
 
     # trains the network with the groundTruths and adversarial exemples given. If Flag fourier_data is false,
     # the adversarial exemples are expected to be in real space
-    def train(self, groundTruth, adversarial, learning_rate):
+    def train(self, groundTruth, adversarial, learning_rate):#, noise_lvl):
         groundTruth = ut.unify_form(groundTruth)
         adversarial = ut.unify_form(adversarial)
-
+#        self.noise_lvl = noise_lvl
         self.sess.run(self.optimizer, feed_dict={self.true: groundTruth, self.gen: adversarial,
-                                                 self.learning_rate: learning_rate})
+                                                 self.learning_rate: learning_rate})#,
+#                                                 self.noise_lvl: noise_lvl})
 
     # Input as in 'train', but writes results to tensorboard instead
-    def test(self, groundTruth, adversarial):
-        groundTruth = ut.unify_form(groundTruth)
-        adversarial = ut.unify_form(adversarial)
+    def test(self, groundTruth, adversarial):#, noise_lvl):
+        groundTruth = ut.unify_form(groundTruth) #/ (noise_lvl * 500)
+        adversarial = ut.unify_form(adversarial) #/ (noise_lvl * 500)
+#        self.noise_lvl = noise_lvl
 
         merged, step = self.sess.run([self.merged_network, self.global_step],
                                      feed_dict={self.true: groundTruth, self.gen: adversarial})

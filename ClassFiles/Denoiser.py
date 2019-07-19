@@ -3,25 +3,26 @@ import tensorflow as tf
 from ClassFiles.networks import UNet
 import ClassFiles.ut as ut
 # from ClassFiles.ut import fftshift_tf
-from ClassFiles.ut import normalize_tf
+from ClassFiles.ut import normalize_tf, sobolev_norm, normalize_np
 
 IMAGE_SIZE = (None, 96, 96, 96, 1)
 FOURIER_SIZE = (None, 96, 96, 49, 1)
 
 
-def data_augmentation_default(gt, adv):
+def data_augmentation_default(gt, adv, noise_lvl):
     return gt, adv
 
 
 class Denoiser(object):
 
-    def __init__(self, path, data_augmentation=data_augmentation_default, solver='Adam', load=False, cp=None):
-
+    def __init__(self, path, data_augmentation=data_augmentation_default, solver='Adam', load=True, cp=None, s=0.0, cutoff=20.0, normalize='l2'):
+#        self.noise_lvl = 1.0
         self.path = path
         self.network = UNet()
         self.sess = tf.InteractiveSession()
         self.run_options = tf.RunOptions(report_tensor_allocations_upon_oom=True)
         self.solver = solver
+        self.normalize = normalize
 
         ut.create_single_folder(self.path + '/Data')
         ut.create_single_folder(self.path + '/Logs')
@@ -31,13 +32,23 @@ class Denoiser(object):
         self.true = tf.placeholder(shape=IMAGE_SIZE, dtype=tf.float32)
         self.learning_rate = tf.placeholder(dtype=tf.float32)
 
-        # Network outputs
-        self.true_normed, self.data_normed = data_augmentation(normalize_tf(self.true),
-                                                     normalize_tf(self.data))
-        self.denoised = self.network.net(self.data_normed)
+#         Network outputs
+        if self.normalize == 'l2':
+            self.true_normed, self.data_normed = data_augmentation(normalize_tf(self.true),
+                                                         normalize_tf(self.data))
+        elif self.normalize == 'NO':
+            self.true_normed, self.data_normed = data_augmentation(self.true, self.data)#, self.noise_lvl)
+    
+            self.denoised = self.network.net(self.data_normed)
 
         # Loss
-        self.loss = 0.5 * tf.reduce_sum((self.true_normed - self.denoised) ** 2)
+        if s == 0.0:
+ #           print('good')
+ #           raise Exception
+            self.loss = 0.5 * tf.reduce_sum((self.true_normed - self.denoised) ** 2)
+#            print('bad')
+        else:
+            self.loss = 0.5 * tf.reduce_sum(sobolev_norm(self.true_normed - self.denoised, s=s, cutoff=cutoff) ** 2)
         
         # Optimizer
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -84,20 +95,29 @@ class Denoiser(object):
 
     def evaluate(self, data):
         data_uf = ut.unify_form(data)
-        return self.denoised.eval(feed_dict={self.data: data_uf})[0, ..., 0]
+        norm = 1.0
+        if self.normalize == 'l2':
+            norm, data_uf = normalize_np(data_uf, return_norm=True)
+        elif self.normalize == 'NO':
+            pass
+        return norm * self.denoised.eval(feed_dict={self.data_normed: data_uf})[0, ..., 0]
 
-    def train(self, groundTruth, noisy, learning_rate=None):
+    def train(self, groundTruth, noisy, learning_rate=None): # noise_lvl,
+#        self.noise_lvl = noise_lvl
+#        print('In train_den:', self.noise_lvl)
         groundTruth = ut.unify_form(groundTruth)
         noisy = ut.unify_form(noisy)
         self.sess.run(self.optimizer,
                       feed_dict={self.true: groundTruth,
                                  self.data: noisy,
-                                 self.learning_rate: learning_rate})
+                                 self.learning_rate: learning_rate})#,
+#                                 self.noise_lvl: noise_lvl})
 
     # Input as in 'train', but writes results to tensorboard instead
-    def test(self, groundTruth, noisy, writer='train'):
-        groundTruth = ut.unify_form(groundTruth)
-        noisy = ut.unify_form(noisy)
+    def test(self, groundTruth, noisy, writer='train'): # noise_levle
+#        self.noise_lvl = noise_lvl
+        groundTruth = ut.unify_form(groundTruth) #/ (noise_lvl * 500)
+        noisy = ut.unify_form(noisy) #/ (noise_lvl * 500)
         merged, step = self.sess.run([self.merged_network, self.global_step],
                                      feed_dict={self.true: groundTruth,
                                                 self.data: noisy})
