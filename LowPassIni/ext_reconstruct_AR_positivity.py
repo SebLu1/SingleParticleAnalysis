@@ -114,7 +114,7 @@ for k in range(70):
     gradient = regularizer.evaluate(reco)
     g1 = ADVERSARIAL_REGULARIZATION * gradient * ADVERSARIAL_SCALE
 #     print(l2(gradient))
-    g2 = DATA_SCALE*(np.multiply(reco, tikhonov_kernel) - complex_data)
+    g2 = DATA_SCALE * (np.multiply(reco, tikhonov_kernel) - complex_data)
     
     g = g1 + g2
 #     reco = reco - STEP_SIZE * 0.02 * g

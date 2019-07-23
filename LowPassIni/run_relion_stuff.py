@@ -36,10 +36,23 @@ parser.add_argument('--normalize', help='What normalization was network trained 
 parser.add_argument('--ini_pt', help='Initial point for AR gradient descent')
 parser.add_argument('--tik_reg', help='Tikhononv constant for')
 parser.add_argument('--net_path', help='Path to network')
+parser.add_argument('--tau_fudge', help='Tau fudge factor')
+parser.add_argument('--over_write', help='Run EM even if exists')
+
 args = vars(parser.parse_args())
 
 print(args)
 #raise Exception
+
+if args['tau_fudge'] is not None:
+    TAU_FUDGE = float(args['tau_fudge'])
+else:
+    TAU_FUDGE = 1.0
+
+if args['over_write'] is not None:
+    OVER_WRITE = int(args['over_write'])
+else:
+    OVER_WRITE = 0
 
 if args['gt_start'] is not None:
     GT_START = int(args['gt_start'])
@@ -71,7 +84,6 @@ MASK = int(args['mask'])
 
 
 noise_level = args['noise'].split(' ')
-
 EXT_RECO_MODE = args['ext']
 if EXT_RECO_MODE == '0':
     METHOD = 'EM'
@@ -94,7 +106,7 @@ else:
 #            print('NET_PATH' + NET_PATH)
 #            raise Exception
         else:
-            raise Exception                 
+            raise Exception  
         METHOD = EXT_RECO_MODE + '_REG_PAR_' + REG_PAR + '_TIK_REG_' + TIK_REG + '_INI_POINT_' + INI_POINT 
     elif EXT_RECO_MODE == 'naive_den':
         if args['ini_pt'] is not None:
@@ -202,7 +214,6 @@ if args['pdb_id'] is not '0':
 print('PDB ids: ', PDB_ID)
 print('Eval data: ', EVAL_DATA)
 #input("Looks alright?")
-
 if mk_dirs:
     for p in PDB_ID:
         for n in noise_level:
@@ -248,7 +259,7 @@ if run_EM:
             else:
                 check_path = '{OP}/{meth}/{p}/{p}_mult0{n}_class001.mrc'.format(OP=out_path, p=p, n=n, meth=METHOD).format(N=n)
 #            print(check_path)
-            if not os.path.isfile(check_path):
+            if not os.path.isfile(check_path) or OVER_WRITE:
                 print('Running refinement for: ' + p)
 #                raise Exception
                 if MASK:
@@ -301,5 +312,6 @@ if run_EM:
     #            refine_cmd += ' --iter 30'
                 refine_cmd += ' --preread_images' #  Use this to let the master process read all particles into memory.
                                                    #  Be careful you have enough RAM for large data sets!
-                refine_cmd = refine_cmd.format(OP=out_path, p=p, n=n, GPU_ids=GPU_ids, NUM_MPI=NUM_MPI, meth=METHOD)
+                refine_cmd += ' --tau2_fudge {TAU_F}'
+                refine_cmd = refine_cmd.format(OP=out_path, p=p, n=n, GPU_ids=GPU_ids, NUM_MPI=NUM_MPI, meth=METHOD, TAU_F=TAU_FUDGE)
                 runCommand(refine_cmd.format(N=n)) 

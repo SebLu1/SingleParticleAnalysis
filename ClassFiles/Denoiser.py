@@ -9,7 +9,7 @@ IMAGE_SIZE = (None, 96, 96, 96, 1)
 FOURIER_SIZE = (None, 96, 96, 49, 1)
 
 
-def data_augmentation_default(gt, adv, noise_lvl):
+def data_augmentation_default(gt, adv):#, noise_lvl):
     return gt, adv
 
 
@@ -19,6 +19,9 @@ class Denoiser(object):
 #        self.noise_lvl = 1.0
         self.path = path
         self.network = UNet()
+#        if 'session' in locals() and session is not None:
+#            print('Close interactive session')
+#            session.close()
         self.sess = tf.InteractiveSession()
         self.run_options = tf.RunOptions(report_tensor_allocations_upon_oom=True)
         self.solver = solver
@@ -39,7 +42,7 @@ class Denoiser(object):
         elif self.normalize == 'NO':
             self.true_normed, self.data_normed = data_augmentation(self.true, self.data)#, self.noise_lvl)
     
-            self.denoised = self.network.net(self.data_normed)
+        self.denoised = self.network.net(self.data_normed)
 
         # Loss
         if s == 0.0:
@@ -100,7 +103,9 @@ class Denoiser(object):
             norm, data_uf = normalize_np(data_uf, return_norm=True)
         elif self.normalize == 'NO':
             pass
-        return norm * self.denoised.eval(feed_dict={self.data_normed: data_uf})[0, ..., 0]
+        print('DATA_UF_SHAPE: ', data_uf.shape)
+        return norm * self.sess.run(self.denoised, feed_dict={self.data: data_uf})[0, ..., 0]
+#        return norm * self.denoised.eval(feed_dict={self.data_normed: data_uf})[0, ..., 0]
 
     def train(self, groundTruth, noisy, learning_rate=None): # noise_lvl,
 #        self.noise_lvl = noise_lvl

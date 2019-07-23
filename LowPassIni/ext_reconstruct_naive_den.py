@@ -91,22 +91,19 @@ if INI_POINT == 'classical':
     with mrcfile.open(target_path_TMP) as mrc:
         classical_relion_reco = mrc.data
     reco = np.copy(classical_relion_reco)
-    reco = rfft(reco)
+
 elif INI_POINT == 'tik':
     reco = np.divide(complex_data, tikhonov_kernel)
+    reco = irfft(reco)
     
-reco = np.fft.rfftn(np.maximum(0, np.fft.irfftn(reco)))
 
 
 denoiser = Denoiser(SAVES_PATH, normalize=NORMALIZATION)
 
-with mrcfile.open(target_path) as mrc:
-    reco = mrc.data.copy()
-
-rel_reco_norm = np.sum(np.abs(reco))    
+#rel_reco_norm = np.sum(np.abs(reco))    
 
 denoised = denoiser.evaluate(reco)
-den_norm = np.sum(np.abs(denoised))
+#den_norm = np.sum(np.abs(denoised))
 
 #denoised *= rel_reco_norm/den_norm
 
