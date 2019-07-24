@@ -90,7 +90,8 @@ class AdversarialRegulariser(object):
             l.append(tf.summary.scalar('Overall_Net_Loss', self.loss_was))
             l.append(tf.summary.scalar('Norm_Input_true', tf.norm(self.true)))
             l.append(tf.summary.scalar('Norm_Input_adv', tf.norm(self.gen)))
-            l.append(tf.summary.scalar('Norm_Gradient', tf.norm(self.gradient)))
+            l.append(tf.summary.scalar('Norm_Gradient_adv', tf.norm(self.gradient)))
+            l.append(tf.summary.scalar('Norm_Gradient_true', tf.norm(gradient_track)))
             with tf.name_scope('Maximum_Projection'):
                 l.append(tf.summary.image('Adversarial', tf.reduce_max(self.gen_normed, axis=3), max_outputs=1))
                 l.append(tf.summary.image('GroundTruth', tf.reduce_max(self.true_normed, axis=3), max_outputs=1))

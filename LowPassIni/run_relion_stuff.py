@@ -137,11 +137,12 @@ if EXT_RECO_MODE == 'def_pos':
     os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = CODE_PATH + 'SingleParticleAnalysis/LowPassIni/ext_reconstruct_CLASSICAL_positivity.py' 
     print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])    
 elif EXT_RECO_MODE == 'AR':
-    # AR w/o positivity needs update
-    raise Exception
     os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = CODE_PATH + 'SingleParticleAnalysis/LowPassIni/ext_reconstruct_AR.py'
     print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])
     os.environ['RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION'] = REG_PAR
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_REG_TIK'] = TIK_REG
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_AR_INI_POINT'] = INI_POINT
+    os.environ['RELION_EXTERNAL_RECONSTRUCT_NET_PATH'] = NET_PATH  
 elif EXT_RECO_MODE == 'AR_pos':
     os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'] = CODE_PATH + 'SingleParticleAnalysis/LowPassIni/ext_reconstruct_AR_positivity.py'
     print('EXT_RECO: ' + os.environ['RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE'])

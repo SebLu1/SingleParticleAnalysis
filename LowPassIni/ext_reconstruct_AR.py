@@ -1,4 +1,4 @@
-#!/home/zickert/miniconda3/envs/tensorflow_gpu/bin/python
+#!/lmb/home/schools1/anaconda3/envs/tensorflow_gpu/bin/python
 
 import numpy as np
 import mrcfile
@@ -9,6 +9,10 @@ if PLATFORM_NODE == 'motel':
     sys.path.insert(0, '/home/sl767/PythonCode/SingleParticleAnalysis')
 elif PLATFORM_NODE == 'radon':
     sys.path.insert(0, '/home/zickert/SingleParticleAnalysis')
+elif 'lmb' in PLATFORM_NODE:
+    sys.path.insert(0, '/lmb/home/schools1/SingleParticleAnalysis')
+else:
+    raise Exception
 from ClassFiles.relion_fixed_it import load_star
 from ClassFiles.AdversarialRegularizer import AdversarialRegulariser
 from ClassFiles.ut import irfft, rfft
@@ -22,33 +26,40 @@ star_path = sys.argv[1]
 def runCommand(cmd_string, shell=False):
     sp.call(cmd_string.split(' '), shell=shell)
 
-print('Running classical RELION M-step...')
-os.environ["RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE"] = "relion_external_reconstruct"
-runCommand('relion_external_reconstruct' + ' ' + star_path)
-print('Classical RELION M-step Completed')
 
-star_file = load_star(star_path)
-target_path = star_file['external_reconstruct_general']['rlnExtReconsResult']
-target_path_TMP = target_path[:-4] + '_TMP_' + '.mrc'
+INI_POINT = os.environ["RELION_EXTERNAL_RECONSTRUCT_AR_INI_POINT"]
+REGULARIZATION_TY = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REG_TIK"])
+ADVERSARIAL_REGULARIZATION = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"])
+SAVES_PATH = os.environ['RELION_EXTERNAL_RECONSTRUCT_NET_PATH']
 
-os.rename(target_path, target_path_TMP)
+if INI_POINT == 'classical':
+    print('Running classical RELION M-step...')
+    os.environ["RELION_EXTERNAL_RECONSTRUCT_EXECUTABLE"] = "relion_external_reconstruct"
+    runCommand('relion_external_reconstruct' + ' ' + star_path)
+    print('Classical RELION M-step Completed')
 
-print(target_path + ' renamed to ' + target_path_TMP )
+    star_file = load_star(star_path)
+    target_path = star_file['external_reconstruct_general']['rlnExtReconsResult']
+    target_path_TMP = target_path[:-4] + '_TMP_' + '.mrc'
+    
+    os.rename(target_path, target_path_TMP)
+    
+    print(target_path + ' renamed to ' + target_path_TMP )
 #raise Exception
 
 
 
-ADVERSARIAL_REGULARIZATION = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"])
 print('ADVERSARIAL_REGULARIZATION: ' + str(ADVERSARIAL_REGULARIZATION))
 
-REGULARIZATION_TY = 1e6
 
-if PLATFORM_NODE == 'motel':
-    SAVES_PATH = '/local/scratch/public/sl767/SPA/Saves/SimDataPaper/'
-    SAVES_PATH += 'Adversarial_Regulariser/Cutoff_20/Roto-Translation_Augmentation'
-elif PLATFORM_NODE == 'radon':
-    SAVES_PATH = '/mnt/datahd/zickert/SPA/Saves/SimDataPaper/'
-    SAVES_PATH += 'Adversarial_Regulariser/trained_on_SGD/Cutoff_20/Roto-Translation_Augmentation'    
+
+
+#if PLATFORM_NODE == 'motel':
+#    SAVES_PATH = '/local/scratch/public/sl767/SPA/Saves/SimDataPaper/'
+#    SAVES_PATH += 'Adversarial_Regulariser/Cutoff_20/Roto-Translation_Augmentation'
+#elif PLATFORM_NODE == 'radon':
+#    SAVES_PATH = '/mnt/datahd/zickert/SPA/Saves/SimDataPaper/'
+#    SAVES_PATH += 'Adversarial_Regulariser/trained_on_SGD/Cutoff_20/Roto-Translation_Augmentation'   
 
 
 iteration = ''
@@ -71,18 +82,23 @@ with mrcfile.open(star_file['external_reconstruct_general']['rlnExtReconsWeight'
     kernel = mrc.data
 
 target_path = star_file['external_reconstruct_general']['rlnExtReconsResult']
+complex_data = data_real + 1j * data_im
+tikhonov_kernel = kernel + REGULARIZATION_TY
 
-with mrcfile.open(target_path_TMP) as mrc:
-    classical_relion_reco = mrc.data
-reco = np.copy(classical_relion_reco)
-reco = rfft(reco)
+
+if INI_POINT == 'classical':
+    with mrcfile.open(target_path_TMP) as mrc:
+        classical_relion_reco = mrc.data
+    reco = np.copy(classical_relion_reco)
+    reco = rfft(reco)
+elif INI_POINT == 'tik':
+    reco = np.divide(complex_data, tikhonov_kernel)
+    
 #reco = np.fft.rfftn(np.maximum(0, np.fft.irfftn(reco)))
 
-complex_data = data_real + 1j * data_im
 
 regularizer = AdversarialRegulariser(SAVES_PATH)
 
-tikhonov_kernel = kernel + REGULARIZATION_TY
 precond = np.abs(np.divide(1, tikhonov_kernel))
 precond /= precond.max()
 

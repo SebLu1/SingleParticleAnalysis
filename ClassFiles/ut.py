@@ -23,6 +23,12 @@ else:
 DATA_PATH = BASE_PATH + 'Data/'
 #GT_PATH = BASE_PATH + 'org/'
 
+SSD = True
+if SSD:
+    GT_PATH_TRAIN = '/ssd/zickert/Data/SimDataPaper/Data_001_10k/train/mult_maps'
+    GT_PATH_EVAL = '/ssd/zickert/Data/SimDataPaper/Data_001_10k/eval/mult_maps'
+
+
 def l2(vector):
     return np.sqrt(np.sum(np.square(np.abs(vector))))
 
@@ -77,6 +83,15 @@ def getRecos(noise, method, iter='Final', eval_data=False,
         elif iter == 'All':
             path_list = find('*mult0{}_class001.mrc'.format(noise), folder)
             path_list += find('*it*_class001.mrc', folder)
+    elif method == 'div':
+        folder += 'def_masked'
+        if iter == 'Final':
+            raise Exception
+#            path_list = find('*mult0{}_class001.mrc'.format(noise), folder)
+        elif iter == 'All':
+            path_list = find('*mult0{}_*_class001_external_reconstruct.star'.format(noise), folder)
+#            path_list += find('*it*_class001.mrc', folder) 
+#            print('PATH_LIST, in getRecos : ', path_list)
     return path_list
 
 
