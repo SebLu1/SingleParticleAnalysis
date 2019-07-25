@@ -31,6 +31,7 @@ INI_POINT = os.environ["RELION_EXTERNAL_RECONSTRUCT_AR_INI_POINT"]
 REGULARIZATION_TY = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REG_TIK"])
 ADVERSARIAL_REGULARIZATION = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"])
 SAVES_PATH = os.environ['RELION_EXTERNAL_RECONSTRUCT_NET_PATH']
+PRECOND = False
 
 if INI_POINT == 'classical':
     print('Running classical RELION M-step...')
@@ -99,17 +100,22 @@ elif INI_POINT == 'tik':
 
 regularizer = AdversarialRegulariser(SAVES_PATH)
 
-precond = np.abs(np.divide(1, tikhonov_kernel))
-precond /= precond.max()
+if PRECOND:
+    precond = np.abs(np.divide(1, tikhonov_kernel))
+    precond /= precond.max()
+else:
+    precond = 1.0
 
 # The scales produce gradients of order 1
 ADVERSARIAL_SCALE = (96 ** (-0.5))
 DATA_SCALE = 1 / (10 * 96 ** 3)
 
 #IMAGING_SCALE=96
+NUM_GRAD_STEPS = 70
+STEP_SIZE_NOMINAL = 1e-1
 
-for k in range(70):
-    STEP_SIZE = 1.0 * 1 / np.sqrt(1 + k / 20)
+for k in range(NUM_GRAD_STEPS):
+    STEP_SIZE = STEP_SIZE_NOMINAL * 1 / np.sqrt(1 + k / 20)
     
     gradient = regularizer.evaluate(reco)
     g1 = ADVERSARIAL_REGULARIZATION * gradient * ADVERSARIAL_SCALE

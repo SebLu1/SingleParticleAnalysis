@@ -22,6 +22,8 @@ class Denoiser(object):
 #        if 'session' in locals() and session is not None:
 #            print('Close interactive session')
 #            session.close()
+#        config = tf.ConfigProto()
+#        config.gpu_options.allow_growth = True
         self.sess = tf.InteractiveSession()
         self.run_options = tf.RunOptions(report_tensor_allocations_upon_oom=True)
         self.solver = solver
