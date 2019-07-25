@@ -305,4 +305,9 @@ def unify_form(vector):
     else:
         raise ValueError('Inputs to the regularizer must have between 3 and 5 dimensions')
 
+def cleanStarPath(x, y):
+    x_dir = os.path.split(x)[0]
+    y_file = os.path.split(y)[1]
+    result = os.path.join(x_dir, y_file)
+    return result
 
