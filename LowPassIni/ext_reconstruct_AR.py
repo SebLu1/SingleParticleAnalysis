@@ -111,11 +111,11 @@ ADVERSARIAL_SCALE = (96 ** (-0.5))
 DATA_SCALE = 1 / (10 * 96 ** 3)
 
 #IMAGING_SCALE=96
-NUM_GRAD_STEPS = 70
-STEP_SIZE_NOMINAL = 1e-1
+NUM_GRAD_STEPS = 1000
+STEP_SIZE_NOMINAL = 2e-3
 
 for k in range(NUM_GRAD_STEPS):
-    STEP_SIZE = STEP_SIZE_NOMINAL * 1 / np.sqrt(1 + k / 20)
+    STEP_SIZE = STEP_SIZE_NOMINAL * 1 / np.sqrt(1 + k / 50)
     
     gradient = regularizer.evaluate(reco)
     g1 = ADVERSARIAL_REGULARIZATION * gradient * ADVERSARIAL_SCALE

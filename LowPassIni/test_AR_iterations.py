@@ -20,7 +20,7 @@ from ClassFiles.ut import locate_gt, cleanStarPath
 import itertools
 import subprocess as sp
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 
 #%%
