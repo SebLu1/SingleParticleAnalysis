@@ -21,17 +21,24 @@ import itertools
 import subprocess as sp
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '3'
-
+BASE_PATH = '/mnt/datahd/zickert/copy_beegfs3/'
+REGULARIZATION_TIK = 1e-3 
+PRECOND = False
+PLOT = False
+REPORT = 100
+AR_VERSION = 'trained_on_pos'
+SAVE_RECO_TO_DISK = False
+EVAL_METRIC = 'masked_L2' # 'masked_FSC'
+NOISE_LEVEL = '01'
 
 #%%
-
-#SAVES_PATH = '/beegfs3/zickert/Saves/SimDataPaper/Adversarial_Regulariser/tarball_lr_2e-05_s_1.0_pos_0'
-SAVES_PATH = '/beegfs3/zickert/Saves/SimDataPaper/Adversarial_Regulariser/tarball_positive_lr_2e-05_s_1.0_pos_1'
-regularizer = AdversarialRegulariser(SAVES_PATH)
-
+AR_PATH_POS = '/mnt/datahd/zickert/from_beegfs3/Saves/SimDataPaper/Adversarial_Regulariser/tarball_positive_lr_2e-05_s_1.0_pos_1'
+AR_PATH = '/mnt/datahd/zickert/from_beegfs3/Saves/SimDataPaper/Adversarial_Regulariser/tarball_lr_2e-05_s_1.0_pos_0'
+if AR_VERSION == 'trained_on_pos':
+    regularizer = AdversarialRegulariser(AR_PATH_POS)
+elif AR_VERSION == 'trained_on_non_pos':
+    regularizer = AdversarialRegulariser(AR_PATH)
 #%%
-
-
 def runCommand(cmd_string, file_path=None):
     if file_path is None:
         sp.call(cmd_string.split(' '))
@@ -41,13 +48,13 @@ def runCommand(cmd_string, file_path=None):
         file.close()
 
 
-def fscPointFiveCrossing(x, GT):
-    TEMP_reco_path = '/beegfs3/zickert/TMP_recos/tmp_reco.mrc'
-    TEMP_reco_masked_path = '/beegfs3/zickert/TMP_recos/tmp_reco_masked.mrc'
-    TEMP_mask_path = '/beegfs3/zickert/Test_Learned_Priors/Data/SimDataPaper/Data_001_10k/train/masks/4A2B/mask.mrc'
+def fscPointFiveCrossing(x, GT_path):
+    raise Exception
+    TEMP_reco_path = BASE_PATH + 'TMP_recos/tmp_reco.mrc'
+    TEMP_reco_masked_path = BASE_PATH + 'TMP_recos/tmp_reco_masked.mrc'
+    TEMP_mask_path = BASE_PATH + 'Test_Learned_Priors/Data/SimDataPaper/Data_001_10k/train/masks/4A2B/mask.mrc'
     TEMP_mask_log_path = '/beegfs3/zickert/TMP_recos/mask_log.txt'
-
-
+    
     TEMP_FSC_PATH = '/beegfs3/zickert/TMP_recos/tmp_fsc.star'
 
     with mrcfile.new(TEMP_reco_path, overwrite=True) as mrc:
@@ -56,7 +63,7 @@ def fscPointFiveCrossing(x, GT):
     MULT_COMMAND = 'relion_image_handler --i {} --o {} --multiply {}'.format(TEMP_reco_path, TEMP_reco_masked_path, TEMP_mask_path)   
     runCommand(MULT_COMMAND, TEMP_mask_log_path)
 
-    FSC_COMMAND = 'relion_image_handler --i {} --fsc {} --angpix 1.5'.format(TEMP_reco_masked_path, GT)
+    FSC_COMMAND = 'relion_image_handler --i {} --fsc {} --angpix 1.5'.format(TEMP_reco_masked_path, GT_path)
     runCommand(FSC_COMMAND, TEMP_FSC_PATH)
  
     FSC_dict = load_star(TEMP_FSC_PATH)
@@ -68,33 +75,50 @@ def fscPointFiveCrossing(x, GT):
     return cross_res
 
 
-#INI_POINT = 'tik'
-#INI_POINT = 'classical' #os.environ["RELION_EXTERNAL_RECONSTRUCT_AR_INI_POINT"]
-REGULARIZATION_TY = 1e-3 #float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REG_TIK"])
-#POSITIVITY = False
-PRECOND = False
-PLOT = False
-REPORT = 100
-iterable = itertools.product(['001', '008'], ['classical'], [0, 2e4, 5e4, 1e5], [False, True], [1000], [2e-3])
-for IT, INI_POINT, ADVERSARIAL_REGULARIZATION, POSITIVITY, NUM_GRAD_STEPS, STEP_SIZE_NOMINAL in iterable:
+def masked_L2(x, GT):
+    TEMP_reco_path = BASE_PATH + 'TMP_recos/tmp_reco.mrc'
+    TEMP_reco_masked_path = BASE_PATH + 'TMP_recos/tmp_reco_masked.mrc'
+    TEMP_mask_path = BASE_PATH + 'Test_Learned_Priors/Data/SimDataPaper/Data_001_10k/train/masks/4A2B/mask.mrc'
+    TEMP_mask_log_path = BASE_PATH + 'TMP_recos/mask_log.txt'
+    
+    with mrcfile.new(TEMP_reco_path, overwrite=True) as mrc:
+        mrc.set_data(x.astype(np.float32))
+        
+    MULT_COMMAND = 'relion_image_handler --i {} --o {} --multiply {}'.format(TEMP_reco_path, TEMP_reco_masked_path, TEMP_mask_path)   
+    runCommand(MULT_COMMAND, TEMP_mask_log_path)
 
-    #star_path = '/beegfs3/scheres/PDB2MRC/Data/Test/Data_001_10k/4A2B'
-    #star_path += '/4A2B_mult001_it008_half1_class001_external_reconstruct.star'
+    with mrcfile.open(TEMP_reco_masked_path) as mrc:
+        x_masked = mrc.data.copy()
     
-    
-    star_path = '/beegfs3/zickert/Test_sjors/Data/SimDataPaper/Data_001_10k/4A2B'
-    star_path += '/4A2B_mult001_tau16_it{}_half1_class001_external_reconstruct.star'.format(IT)
-    
+    return np.sqrt(((x_masked - GT) ** 2).sum())
+
+
+def vis(data, fourier=True, SCALE=100):
+    if fourier:
+        data = irfft(data)
+    plt.imshow(SCALE*data.squeeze()[..., 45])
+
+#%%
+iterable = itertools.product(['001', '008'], ['tik'], [0, 2e4, 3e4],#5e4, 1e5],
+                             [True], [5000], [2e-3], ['4A2B'])
+                             #['4AIL', '4BTF', '4A2B', '4BB9', '4M82', '4MU9'])
+for IT, INI_POINT, ADVERSARIAL_REGULARIZATION, POSITIVITY, NUM_GRAD_STEPS, STEP_SIZE_NOMINAL, PDB_ID in iterable:   
+    star_path =  BASE_PATH + 'Test_sjors/Data/SimDataPaper/Data_0{noise}_10k/4A2B'
+    star_path += '/4A2B_mult001_tau16_it{it}_half1_class001_external_reconstruct.star'
+    star_path = star_path.format(noise=NOISE_LEVEL, it=IT)
     
     star_file = load_star(star_path)
-    
-    
+
+    gt_path = locate_gt(star_path, noise=NOISE_LEVEL) # locate_gt finds a mult_map, so it depends on noise level
+    with mrcfile.open(gt_path) as mrc:
+        gt = mrc.data.copy()
+
+    ### Is this needed?
     real_data_path = cleanStarPath(star_path, star_file['external_reconstruct_general']['rlnExtReconsDataReal'])
     imag_data_path = cleanStarPath(star_path, star_file['external_reconstruct_general']['rlnExtReconsDataImag'])
     weight_data_path = cleanStarPath(star_path, star_file['external_reconstruct_general']['rlnExtReconsWeight'])
     target_path = cleanStarPath(star_path, star_file['external_reconstruct_general']['rlnExtReconsResult'])
-    
-    
+      
     with mrcfile.open(real_data_path) as mrc:
         data_real = mrc.data
     with mrcfile.open(imag_data_path) as mrc:
@@ -103,13 +127,10 @@ for IT, INI_POINT, ADVERSARIAL_REGULARIZATION, POSITIVITY, NUM_GRAD_STEPS, STEP_
         kernel = mrc.data
     with mrcfile.open(target_path) as mrc:
         classical_reco = mrc.data
-    
-    
+       
     complex_data = data_real + 1j * data_im
-    tikhonov_kernel = kernel + REGULARIZATION_TY
-    
-    
-    
+    tikhonov_kernel = kernel + REGULARIZATION_TIK
+       
     if PRECOND:
         precond = np.abs(np.divide(1, tikhonov_kernel))
         precond /= precond.max()
@@ -119,28 +140,7 @@ for IT, INI_POINT, ADVERSARIAL_REGULARIZATION, POSITIVITY, NUM_GRAD_STEPS, STEP_
     # The scales produce gradients of order 1
     ADVERSARIAL_SCALE = 1 *(96 ** (-0.5))
     DATA_SCALE = 1 / (10 * 96 ** 3)
-    
-    
-    def vis(data, fourier=True, SCALE=100):
-        if fourier:
-            data = irfft(data)
-        plt.imshow(SCALE*data.squeeze()[..., 45])
-    #     plt.imshow(np.mean(data.squeeze(), axis=-1))
-    
-    
-    
-    
-    
-    gt_path = locate_gt(star_path)
-    with mrcfile.open(gt_path) as mrc:
-        gt = mrc.data.copy()
-        
-    #INI_POINT = 'classical' #os.environ["RELION_EXTERNAL_RECONSTRUCT_AR_INI_POINT"]
-    #    ADVERSARIAL_REGULARIZATION = 80000.0 # float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"])
-    SAVES_PATH = '/beegfs3/zickert/Saves/SimDataPaper/Adversarial_Regulariser/tarball_lr_2e-05_s_1.0_pos_0'
-
-    
-    
+       
     if INI_POINT == 'tik':
         init = np.divide(complex_data, tikhonov_kernel)
     elif INI_POINT == 'classical':
@@ -150,11 +150,13 @@ for IT, INI_POINT, ADVERSARIAL_REGULARIZATION, POSITIVITY, NUM_GRAD_STEPS, STEP_
         init = np.fft.rfftn(np.maximum(0, np.fft.irfftn(init)))
     reco = init.copy()
     print('####################')
-    print(IT, INI_POINT, ADVERSARIAL_REGULARIZATION, POSITIVITY, NUM_GRAD_STEPS, STEP_SIZE_NOMINAL)
+    print(PDB_ID, NOISE_LEVEL, IT, INI_POINT, ADVERSARIAL_REGULARIZATION, POSITIVITY, NUM_GRAD_STEPS, STEP_SIZE_NOMINAL)
     print('####################')
-    print('INIT FSC 0.5 crossing: ', fscPointFiveCrossing(irfft(init), gt_path))
-    
-    
+    if EVAL_METRIC == 'masked_FSC':
+        print('INIT FSC 0.5 crossing: ', fscPointFiveCrossing(irfft(init), gt_path))
+    elif EVAL_METRIC == 'masked_L2':
+        print('INIT L2: ', masked_L2(irfft(init), gt))
+       
     if INI_POINT == 'classical' or ADVERSARIAL_REGULARIZATION != 0 or POSITIVITY:
         for k in range(NUM_GRAD_STEPS):
             STEP_SIZE = STEP_SIZE_NOMINAL * 1 / np.sqrt(1 + k / 50)
@@ -166,12 +168,14 @@ for IT, INI_POINT, ADVERSARIAL_REGULARIZATION, POSITIVITY, NUM_GRAD_STEPS, STEP_
             reco_o = reco
             reco = reco - STEP_SIZE * precond * g
             
-            
             if POSITIVITY:    
                 reco = np.fft.rfftn(np.maximum(0, np.fft.irfftn(reco)))
         
             if k % REPORT == 0:
-                print('FSC 0.5 crossing: ', fscPointFiveCrossing(irfft(reco), gt_path))
+                if EVAL_METRIC == 'masked_FSC':
+                    print('FSC 0.5 crossing: ', fscPointFiveCrossing(irfft(reco), gt_path))
+                elif EVAL_METRIC == 'masked_L2':
+                    print('L2: ', masked_L2(irfft(reco), gt))
                 if PLOT:
                     plt.figure(k, figsize=(20, 3))
                     plt.subplot(151)
@@ -190,10 +194,11 @@ for IT, INI_POINT, ADVERSARIAL_REGULARIZATION, POSITIVITY, NUM_GRAD_STEPS, STEP_
                     vis(reco-init)
                     plt.colorbar()
                     plt.show()
-     
-    reco_real = irfft(reco)
-    AR_reco_path = '/beegfs3/zickert/TMP_recos/reco_it{}_reg{}_pos{}_ini{}_stepLen{}_Nsteps{}.mrc'.format(IT, ADVERSARIAL_REGULARIZATION, POSITIVITY, INI_POINT, STEP_SIZE_NOMINAL, NUM_GRAD_STEPS)
-    
-    with mrcfile.new(AR_reco_path, overwrite=True) as mrc:
-        mrc.set_data(reco_real.astype(np.float32))
-        mrc.voxel_size = 1.5
+
+    if SAVE_RECO_TO_DISK:
+        raise NotImplementedError
+        reco_real = irfft(reco)
+        AR_reco_path = BASE_PATH + 'TMP_recos/reco_it{}_reg{}_pos{}_ini{}_stepLen{}_Nsteps{}.mrc'.format(IT, ADVERSARIAL_REGULARIZATION, POSITIVITY, INI_POINT, STEP_SIZE_NOMINAL, NUM_GRAD_STEPS)  
+        with mrcfile.new(AR_reco_path, overwrite=True) as mrc:
+            mrc.set_data(reco_real.astype(np.float32))
+            mrc.voxel_size = 1.5

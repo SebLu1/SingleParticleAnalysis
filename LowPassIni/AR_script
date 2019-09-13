@@ -4,10 +4,10 @@
 #conda activate tensorflow_gpu
 
 run_AR () {
-CUDA_VISIBLE_DEVICES=$7 python /lmb/home/schools1/SingleParticleAnalysis/LowPassIni/run_relion_stuff.py --pdb_id $1 --reg_par $2 --tik_reg $3 --net_path $4 --ini_pt $5 --gpu $6 --tau_fudge $8 --projs 0 --em 1 --eval 0 --pdb_folder 0 --pdb_start_idx 0 --pdb_end_idx 0 --noise 01 --ext AR_pos --mask 1 --num_mpi 3 --over_write 1
+CUDA_VISIBLE_DEVICES=$7 python /home/zickert/SingleParticleAnalysis/LowPassIni/run_relion_stuff.py --pdb_id $1 --reg_par $2 --tik_reg $3 --net_path $4 --ini_pt $5 --gpu $6 --tau_fudge $8 --projs 0 --em 1 --eval 0 --pdb_folder 0 --pdb_start_idx 0 --pdb_end_idx 0 --noise 01 --ext AR --mask 1 --num_mpi 3 --over_write 1
 }
 
-AR_600_s_1="/beegfs3/zickert/Saves/SimDataPaper/Adversarial_Regulariser/600_data_lr_0.00005_s_1.0/Cutoff_20/Roto-Translation_Augmentation"
+tarball="/mnt/datahd/zickert/from_beegfs3/Saves/SimDataPaper/Adversarial_Regulariser/tarball_lr_2e-05_s_1.0_pos_0"
 PDB_ID="4A2B"
 
 # Run on 19/7 18:41 on fmg32
@@ -16,8 +16,14 @@ PDB_ID="4A2B"
 #run_AR $PDB_ID 10.0 1000000 $AR_600_s_1 "classical" 0 2 & 
 #run_AR $PDB_ID 100.0 1000000 $AR_600_s_1 "classical" 0 3 &
 
-run_AR $PDB_ID 950.0 1000 $AR_600_s_1 "classical" 0:1 0,1 16.0 &
-run_AR $PDB_ID 1050.0 1000 $AR_600_s_1 "classical" 0:1 2,3 16.0 & 
+run_AR $PDB_ID 12500 0.001 $tarball "tik" 0 0 16.0 &
+run_AR $PDB_ID 15000 0.001 $tarball "tik" 0 1 16.0 &
+run_AR $PDB_ID 17500 0.001 $tarball "tik" 0 2 16.0 &
+run_AR $PDB_ID 20000 0.001 $tarball "tik" 0 3 16.0 & 
+run_AR $PDB_ID 25000 0.001 $tarball "tik" 0 4 16.0 &
+run_AR $PDB_ID 30000 0.001 $tarball "tik" 0 5 16.0 &
+run_AR $PDB_ID 50000 0.001 $tarball "tik" 0 6 16.0 &
+run_AR $PDB_ID 100000 0.001 $tarball "tik" 0 7 16.0 & 
 #run_AR $PDB_ID 1600.0 1000 $AR_600_s_1 "classical" 0:1 4,5 8.0 &
 #run_AR $PDB_ID 1900.0 1000 $AR_600_s_1 "classical" 0:1 6,7 8.0 &
  

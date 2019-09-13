@@ -13,7 +13,9 @@ if PLATFORM_NODE == 'motel':
 elif PLATFORM_NODE == 'gelfand':
     BASE_PATH = '/mnt/data/zickert/MRC_Data/'
 elif PLATFORM_NODE == 'radon':
-    BASE_PATH = '/mnt/datahd/zickert/MRC_Data/'
+    BASE_PATH = '/mnt/datahd/zickert/'
+    GT_PATH_TRAIN = BASE_PATH + 'Data/SimDataPaper/Data_0{N}_10k/train/mult_maps'
+    GT_PATH_EVAL = BASE_PATH + 'Data/SimDataPaper/Data_0{N}_10k/eval/mult_maps'
 elif 'lmb' in PLATFORM_NODE:
     BASE_PATH = '/beegfs3/zickert/PDB2MRC/'
     GT_PATH_TRAIN = '/beegfs3/scheres/PDB2MRC/Data/SimDataPaper/Data_001_10k/train/mult_maps'
@@ -23,7 +25,7 @@ else:
 DATA_PATH = BASE_PATH + 'Data/'
 #GT_PATH = BASE_PATH + 'org/'
 
-SSD = True
+SSD = False
 if SSD:
     GT_PATH_TRAIN = '/ssd/zickert/Data/SimDataPaper/Data_001_10k/train/mult_maps'
     GT_PATH_EVAL = '/ssd/zickert/Data/SimDataPaper/Data_001_10k/eval/mult_maps'
@@ -138,7 +140,7 @@ def find(pattern, path):
                 result.append(os.path.join(root, name).replace("\\", "/"))
     return result
 
-def locate_gt(path, full_path=True, eval_data=False):
+def locate_gt(path, noise, full_path=True, eval_data=False):
     """filename in path should start with pdb_id"""
 #    print('path', path)
 #    print('full_path', full_path)
@@ -149,10 +151,12 @@ def locate_gt(path, full_path=True, eval_data=False):
         pdb_id = path
 #    print('pdb_id', pdb_id)
     if eval_data:
-        L = find('*' + pdb_id + '_mult001.mrc', GT_PATH_EVAL)
+        L = find('*' + pdb_id + '_mult0{}.mrc'.format(noise), GT_PATH_EVAL.format(N=noise))
     
     else:
-        L = find('*' + pdb_id + '_mult001.mrc', GT_PATH_TRAIN)    
+        L = find('*' + pdb_id + '_mult0{}.mrc'.format(noise), GT_PATH_TRAIN.format(N=noise))
+#        print(GT_PATH_TRAIN.format(N=noise))
+#        raise Exception
     if not len(L) == 1:
         raise ValueError('non-unique pdb id: ' + str(L))
     else:

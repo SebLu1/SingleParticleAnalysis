@@ -1,4 +1,4 @@
-#!/lmb/home/schools1/anaconda3/envs/tensorflow_gpu/bin/python
+#!/home/zickert/miniconda3/envs/tensorflow_gpu/bin/python
 
 import numpy as np
 import mrcfile
