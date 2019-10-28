@@ -34,26 +34,21 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args['gpu']
 
 if platform.node() == 'radon':
     BASE_SAVES_PATH = '/mnt/datahd/zickert/SPA/Saves/SimDataPaper/'
-    DATA_PATH = '/mnt/datahd/zickert/MRC_Data/Data/SimDataPaper/'
+    DATA_PATH = '/mnt/datahd/zickert/TrainData/SimDataPaper/'
 elif 'lmb' in PLATFORM_NODE:
     BASE_SAVES_PATH = '/beegfs3/zickert/Saves/SimDataPaper/'
     DATA_PATH = '/beegfs3/scheres/PDB2MRC/Data/SimDataPaper/'    
 
-SSD = True
-if SSD:
-    DATA_PATH = '/ssd/zickert/Data/SimDataPaper/'
+#SSD = False
+#if SSD:
+#    DATA_PATH = '/ssd/zickert/Data/SimDataPaper/'
 
 BATCH_SIZE = 1
 LEARNING_RATE = float(args['lr'])
-LOOPS = 4
+LOOPS = 1
 STEPS = 5000
 
-# Parameter choices. Heuristic in the BWGAN paper:
-# Choose GAMMA as average dual norm of clean image
-# LMB should be bigger than product of norm times dual norm.
 
-# For s=0.0, this implies GAMMA =1.0
-# For s=1.0, have GAMMA = 10.0 as realisitc value
 if args['train_on_pos'] is not None:
     TRAIN_ON_POS = int(args['train_on_pos'])
 else:
@@ -79,8 +74,18 @@ print('Tensorboard logdir: ' + SAVES_PATH)
 
 LMB = 10.0
 
-if S == 1.0:
+# Parameter choices. Heuristic in the BWGAN paper:
+# Choose GAMMA as average dual norm of clean image
+# LMB should be bigger than product of norm times dual norm.
+
+# For s=0.0, this implies GAMMA =1.0
+# For s=1.0, have GAMMA = 10.0 as realisitc value
+
+
+if 1.0 <= S <= 2.0:
     GAMMA = 5.0
+elif S == 0.5:
+    GAMMA = 2.5
 elif S == 0.0:
     GAMMA = 1.0
 else:
@@ -106,8 +111,8 @@ EVAL_DICT = get_dict(EVAL_NOISE_LEVELS, EVAL_METHODS, eval_data=True,
 
 
 def data_augmentation(gt, adv):#, noise_lvl):
-    _, adv = interpolation(gt, adv)
-    _, adv = phase_augmentation(gt, adv)
+#    _, adv = interpolation(gt, adv)
+#    _, adv = phase_augmentation(gt, adv)
     if TRAIN_ON_POS:
 #        print('hello')
         _, adv = positivity(gt, adv)
@@ -121,10 +126,10 @@ def data_augmentation(gt, adv):#, noise_lvl):
 regularizer = AdversarialRegulariser(SAVES_PATH, data_augmentation,
                                      s=S, cutoff=20.0, lmb=LMB, gamma=GAMMA)
 
-log_file = open(LOG_FILE_PATH, "w")
-log_file.write('Train data:\n' + str(TRAIN_DICT) + '\n')
-log_file.write('Eval data:\n' + str(EVAL_DICT) + '\n')
-log_file.close()
+#log_file = open(LOG_FILE_PATH, "w")
+#log_file.write('Train data:\n' + str(TRAIN_DICT) + '\n')
+#log_file.write('Eval data:\n' + str(EVAL_DICT) + '\n')
+#log_file.close()
 
 
 

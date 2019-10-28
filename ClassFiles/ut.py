@@ -14,15 +14,15 @@ elif PLATFORM_NODE == 'gelfand':
     BASE_PATH = '/mnt/data/zickert/MRC_Data/'
 elif PLATFORM_NODE == 'radon':
     BASE_PATH = '/mnt/datahd/zickert/'
-    GT_PATH_TRAIN = BASE_PATH + 'Data/SimDataPaper/Data_0{N}_10k/train/mult_maps'
-    GT_PATH_EVAL = BASE_PATH + 'Data/SimDataPaper/Data_0{N}_10k/eval/mult_maps'
+    GT_PATH_TRAIN = BASE_PATH + 'TrainData/SimDataPaper/Data_0{N}_10k/train/mult_maps'
+    GT_PATH_EVAL = BASE_PATH + 'TrainData/SimDataPaper/Data_0{N}_10k/eval/mult_maps'
 elif 'lmb' in PLATFORM_NODE:
     BASE_PATH = '/beegfs3/zickert/PDB2MRC/'
     GT_PATH_TRAIN = '/beegfs3/scheres/PDB2MRC/Data/SimDataPaper/Data_001_10k/train/mult_maps'
     GT_PATH_EVAL = '/beegfs3/scheres/PDB2MRC/Data/SimDataPaper/Data_001_10k/eval/mult_maps'
 else:
     raise Exception
-DATA_PATH = BASE_PATH + 'Data/'
+DATA_PATH = BASE_PATH + 'TrainData/'
 #GT_PATH = BASE_PATH + 'org/'
 
 SSD = False

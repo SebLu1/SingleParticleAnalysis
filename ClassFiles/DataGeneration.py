@@ -6,9 +6,12 @@ import sys
 if PLATFORM_NODE == 'motel':
     sys.path.insert(0, '/home/sl767/PythonCode/SingleParticleAnalysis')
 elif PLATFORM_NODE == 'lg26.lmb.internal':
-    sys.path.insert(0, '/lmb/home/schools1/SingleParticleAnalysis')    
+    sys.path.insert(0, '/lmb/home/schools1/SingleParticleAnalysis')
+elif PLATFORM_NODE == 'radon':
+    sys.path.insert(0, '/home/zickert/SingleParticleAnalysis')    
 from ClassFiles.ut import getRecos, locate_gt, irfft
 from ClassFiles.relion_fixed_it import load_star
+from ClassFiles.ut import cleanStarPath 
 import random
 
 DEFAULT_BATCH_SIZE = 1
@@ -38,18 +41,20 @@ def get_image(noise_level, method, data_dict, eval_data):
 #        print('adv_path', adv_path)
 #        raise Exception
         star_file = load_star(adv_path)
-        with mrcfile.open(star_file['external_reconstruct_general']['rlnExtReconsDataReal']) as mrc:
+        with mrcfile.open(cleanStarPath(adv_path, star_file['external_reconstruct_general']['rlnExtReconsDataReal'])) as mrc:
             data_real = mrc.data
-        with mrcfile.open(star_file['external_reconstruct_general']['rlnExtReconsDataImag']) as mrc:
+        with mrcfile.open(cleanStarPath(adv_path, star_file['external_reconstruct_general']['rlnExtReconsDataImag'])) as mrc:
             data_im = mrc.data
-        with mrcfile.open(star_file['external_reconstruct_general']['rlnExtReconsWeight']) as mrc:
+        with mrcfile.open(cleanStarPath(adv_path, star_file['external_reconstruct_general']['rlnExtReconsWeight'])) as mrc:
             kernel = mrc.data
         adv = np.divide(data_real + 1j * data_im, kernel + 1e-3)
         adv = irfft(adv)
     else:
         with mrcfile.open(adv_path) as mrc:
             adv = mrc.data
-    with mrcfile.open(locate_gt(adv_path, eval_data=eval_data)) as mrc:
+
+
+    with mrcfile.open(locate_gt(adv_path, noise_level, eval_data=eval_data)) as mrc:
         gt = mrc.data
 #    print(locate_gt(adv_path, eval_data=eval_data))
 #    print(star_file)
