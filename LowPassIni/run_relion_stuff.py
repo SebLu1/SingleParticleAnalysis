@@ -38,6 +38,8 @@ parser.add_argument('--tik_reg', help='Tikhononv constant for')
 parser.add_argument('--net_path', help='Path to network')
 parser.add_argument('--tau_fudge', help='Tau fudge factor')
 parser.add_argument('--over_write', help='Run EM even if exists')
+parser.add_argument('--sobolev', help='Sobolev constant')
+
 
 args = vars(parser.parse_args())
 
@@ -81,6 +83,8 @@ PDB_FOLDER = args['pdb_folder'].split(' ')
 START_MOL = int(args['pdb_start_idx'])
 END_MOL = int(args['pdb_end_idx'])
 MASK = int(args['mask'])
+SOBOLEV = args['sobolev']
+
 
 
 noise_level = args['noise'].split(' ')
@@ -107,7 +111,7 @@ else:
 #            raise Exception
         else:
             raise Exception  
-        METHOD = EXT_RECO_MODE + '_REG_PAR_' + REG_PAR + '_TIK_REG_' + TIK_REG + '_INI_POINT_' + INI_POINT 
+        METHOD = EXT_RECO_MODE + '_REG_PAR_' + REG_PAR + '_TIK_REG_' + TIK_REG + '_INI_POINT_' + INI_POINT + '_SOBOLEV_' + SOBOLEV
     elif EXT_RECO_MODE == 'naive_den':
         if args['ini_pt'] is not None:
             INI_POINT = args['ini_pt']
@@ -192,7 +196,7 @@ def find_PDB_ID(pattern, path, sort=True):
 
 ORG_PATH = BASE_PATH + '/converted'
 
-out_path = BASE_PATH + '/Data/SimDataPaper/Data_0{N}_10k'
+out_path = BASE_PATH + '/TestAR_Data/SimDataPaper/Data_0{N}_10k'
 
 if EVAL_DATA:
     out_path = out_path + '/eval'
@@ -228,7 +232,7 @@ if mk_dirs:
             else:
                 runCommand('mkdir -p {OP}/{meth}/{p}'.format(OP=out_path, p=p, meth=METHOD).format(N=n))
 #            runCommand('mkdir -p {OP}/LowPass/{p}'.format(OP=out_path, p=p).format(N=n))
-        
+       
 if create_projs:
     # Scale phantoms
     for p in PDB_ID:

@@ -28,8 +28,9 @@ def runCommand(cmd_string, shell=False):
 
 
 INI_POINT = os.environ["RELION_EXTERNAL_RECONSTRUCT_AR_INI_POINT"]
-REGULARIZATION_TY = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REG_TIK"])
-ADVERSARIAL_REGULARIZATION = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"])
+REGULARIZATION_TIK = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REG_TIK"])
+AR_REG_TYPE = os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"]
+#ADVERSARIAL_REGULARIZATION = float(os.environ["RELION_EXTERNAL_RECONSTRUCT_REGULARIZATION"])
 SAVES_PATH = os.environ['RELION_EXTERNAL_RECONSTRUCT_NET_PATH']
 PRECOND = False
 
@@ -50,7 +51,6 @@ if INI_POINT == 'classical':
 
 
 
-print('ADVERSARIAL_REGULARIZATION: ' + str(ADVERSARIAL_REGULARIZATION))
 
 
 
@@ -71,7 +71,7 @@ for det in l:
         
 print('Iteration: {}'.format(iteration))
     
-print('Regularization: ' + str(ADVERSARIAL_REGULARIZATION))
+
 
 star_file = load_star(star_path)
 
@@ -83,8 +83,42 @@ with mrcfile.open(star_file['external_reconstruct_general']['rlnExtReconsWeight'
     kernel = mrc.data
 
 target_path = star_file['external_reconstruct_general']['rlnExtReconsResult']
+print(target_path)
+#raise Exception
 complex_data = data_real + 1j * data_im
-tikhonov_kernel = kernel + REGULARIZATION_TY
+tikhonov_kernel = kernel + REGULARIZATION_TIK
+
+
+regularizer = AdversarialRegulariser(SAVES_PATH)
+# The scales produce gradients of order 1
+ADVERSARIAL_SCALE = (96 ** (-0.5))
+DATA_SCALE = 1 / (10 * 96 ** 3)
+
+
+def locate_multmap(PDB='4BB9', noise='01'):
+    BASE_PATH = '/mnt/datahd/zickert/'
+    gt_path = BASE_PATH + 'TrainData/SimDataPaper/Data_0{n}_10k/train/mult_maps/{p}/{p}_mult0{n}.mrc'
+    gt_path = gt_path.format(n=noise, p=PDB)
+    return gt_path
+
+
+gt_path = locate_multmap() 
+with mrcfile.open(gt_path) as mrc:
+    gt = mrc.data.copy()
+
+
+if AR_REG_TYPE == 'auto':
+    gradient_gt = regularizer.evaluate(rfft(gt))
+    g1_gt = gradient_gt * ADVERSARIAL_SCALE
+    g1_gt_norm = np.sqrt((np.abs(g1_gt) ** 2).sum())
+    g2_gt = DATA_SCALE * (np.multiply(rfft(gt), tikhonov_kernel) - complex_data)
+    g2_gt_norm = np.sqrt((np.abs(g2_gt) ** 2).sum())
+    ADVERSARIAL_REGULARIZATION = g2_gt_norm / g1_gt_norm
+    print('Auto computed REG_PAR: ', ADVERSARIAL_REGULARIZATION)
+else:
+    ADVERSARIAL_REGULARIZATION = float(AR_REG_TYPE)
+    print('Regularization: ' + str(ADVERSARIAL_REGULARIZATION))
+
 
 
 if INI_POINT == 'classical':
@@ -98,7 +132,6 @@ elif INI_POINT == 'tik':
 reco = np.fft.rfftn(np.maximum(0, np.fft.irfftn(reco)))
 
 
-regularizer = AdversarialRegulariser(SAVES_PATH)
 
 if PRECOND:
     precond = np.abs(np.divide(1, tikhonov_kernel))
@@ -106,13 +139,11 @@ if PRECOND:
 else:
     precond = 1.0
 
-# The scales produce gradients of order 1
-ADVERSARIAL_SCALE = (96 ** (-0.5))
-DATA_SCALE = 1 / (10 * 96 ** 3)
+
 
 #IMAGING_SCALE=96
-NUM_GRAD_STEPS = 1000
-STEP_SIZE_NOMINAL = 2e-3
+NUM_GRAD_STEPS = 100
+STEP_SIZE_NOMINAL = 1e-3
 
 for k in range(NUM_GRAD_STEPS):
     STEP_SIZE = STEP_SIZE_NOMINAL * 1 / np.sqrt(1 + k / 50)

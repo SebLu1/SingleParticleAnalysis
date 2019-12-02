@@ -25,7 +25,7 @@ from skimage.measure import compare_ssim as ssim
 #%%
 
 
-if True:
+if False:
     parser = argparse.ArgumentParser(description='test AR gradient descent')
     parser.add_argument('--gpu', help='GPU to use', required=True)
     parser.add_argument('--positivity', help='AR trained with positivity?', required=True)
@@ -36,7 +36,7 @@ if True:
     SOBOLEV_CST = args['s']
     PLOT = False
 else:
-    POS_AR = '0'
+    POS_AR = '1'
     SOBOLEV_CST = '0.5'
     PLOT = False
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
@@ -44,14 +44,14 @@ else:
 #%%
 
 BASE_PATH = '/mnt/datahd/zickert/'
-REGULARIZATION_TIK = 1e-3 
+REGULARIZATION_TIK = 1e-3  # For initialization
 PRECOND = False
 REPORT = 10
 SAVE_RECO_TO_DISK = False
 EVAL_METRIC = 'L2_and_SSIM'# 'masked_L2' # 'masked_FSC'
-NOISE_LEVEL = '012'
+NOISE_LEVEL = '01'
 WIN_SIZE = 7 # for SSIM
-REGULARIZATION_TIK_GD = 1e6
+REGULARIZATION_TIK_GD = 1e6  # During gradient descent
 
 
 #%%
@@ -124,7 +124,7 @@ print('################################')
 def L2(x, GT):    
     return np.sqrt(((x - GT) ** 2).sum())
 
-
+REGULARIZATION_TIK
 def vis(data, fourier=True, SCALE=100):
     if fourier:
         data = irfft(data)
@@ -144,8 +144,8 @@ def locate_star(PDB, noise, iteration):
     return star_path
 
 #%%
-iterable = itertools.product(['4MU9', '4AIL', '4BTF', '4A2B', '4BB9', '4M82', '4MU9'],
-                             ['005'], ['tik'], ['auto', 0],#5e4, 1e5],
+iterable = itertools.product(['4BB9'],#['4MU9', '4AIL', '4BTF', '4A2B', '4BB9', '4M82', '4MU9'],
+                             ['001', '005'], ['tik'], ['auto'],#5e4, 1e5],
                              [POS_AR], [100], [1e-3])
 for PDB_ID, IT, INI_POINT, AR_REG_TYPE, POSITIVITY, NUM_GRAD_STEPS, STEP_SIZE_NOMINAL in iterable:   
 
@@ -174,6 +174,8 @@ for PDB_ID, IT, INI_POINT, AR_REG_TYPE, POSITIVITY, NUM_GRAD_STEPS, STEP_SIZE_NO
     complex_data = data_real + 1j * data_im
     
     tikhonov_kernel = kernel + REGULARIZATION_TIK_GD
+#    tikhonov_kernel_init = kernel + REGULARIZATION_TIK
+
        
     if PRECOND:
         precond = np.abs(np.divide(1, tikhonov_kernel))

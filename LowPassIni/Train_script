@@ -19,5 +19,21 @@
 #19/7 at  ~ 10:30 UK TIME: Use lower LR for denoiser
 #python Training_AR.py --name 600_data --gpu 0 --s 1.0 --lr 0.00005 &
 #python Training_AR.py --name 600_data --gpu 1 --s 0.0 --lr 0.00005 &
-python Training_DEN.py --name 600_data --gpu 2 --s 0.0 --lr 0.000003 --aug 1 &
-python Training_DEN.py --name 600_data --gpu 3 --s 0.0 --lr 0.000003 --aug 0 &
+#python Training_DEN.py --name 600_data --gpu 2 --s 0.0 --lr 0.000003 --aug 1 &
+#python Training_DEN.py --name 600_data --gpu 3 --s 0.0 --lr 0.000003 --aug 0 &
+
+
+# 
+python Training_AR.py --name no_fancy_data_aug --gpu 0 --s 0.0 --lr 0.00005 --train_on_pos 1 --train_on_div 1 &
+python Training_AR.py --name no_fancy_data_aug --gpu 1 --s 0.5 --lr 0.00005 --train_on_pos 1 --train_on_div 1 &
+#python Training_AR.py --name no_fancy_data_aug --gpu 2 --s 1.0 --lr 0.00005 --train_on_pos 1 --train_on_div 1 &
+
+python Training_AR.py --name no_fancy_data_aug --gpu 3 --s 0.0 --lr 0.00005 --train_on_pos 0 --train_on_div 1 &
+python Training_AR.py --name no_fancy_data_aug --gpu 4 --s 0.5 --lr 0.00005 --train_on_pos 0 --train_on_div 1 &
+python Training_AR.py --name no_fancy_data_aug --gpu 5 --s 1.0 --lr 0.00005 --train_on_pos 0 --train_on_div 1 &
+python Training_AR.py --name no_fancy_data_aug --gpu 6 --s 1.5 --lr 0.00005 --train_on_pos 0 --train_on_div 1 &
+python Training_AR.py --name no_fancy_data_aug --gpu 7 --s 2.0 --lr 0.00005 --train_on_pos 0 --train_on_div 1 &
+
+#python Training_AR.py --name no_fancy_data_aug --gpu 5 --s 1.625 --lr 0.00005 --train_on_pos 1 --train_on_div 1 &
+#python Training_AR.py --name no_fancy_data_aug --gpu 6 --s 1.75 --lr 0.00005 --train_on_pos 1 --train_on_div 1 &
+

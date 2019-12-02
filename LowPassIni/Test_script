@@ -1,0 +1,8 @@
+python test_AR_iterations.py --gpu 0 --s 0.0 --positivity 0 >> 01_s0.txt &
+python test_AR_iterations.py --gpu 1 --s 0.0 --positivity 1 >> 01_s0_pos.txt &
+python test_AR_iterations.py --gpu 2 --s 1.0 --positivity 0 >> 01_s1.txt &
+python test_AR_iterations.py --gpu 3 --s 1.0 --positivity 1 >> 01_s1_pos.txt &
+python test_AR_iterations.py --gpu 4 --s 1.5 --positivity 0 >> 01_s15.txt &
+python test_AR_iterations.py --gpu 5 --s 1.5 --positivity 1 >> 01_s15_pos.txt &
+python test_AR_iterations.py --gpu 6 --s 0.5 --positivity 0 >> 01_s05.txt &
+python test_AR_iterations.py --gpu 7 --s 0.5 --positivity 1 >> 01_s05_pos.txt &
